@@ -18,38 +18,87 @@ import java.util.List;
  */
 public class PipelineBuilder {
     /**
-     * Builds a executable pipeline from a specified {@link BackboneConfiguration}
+     * Builds an executable pipeline from a specified {@link BackboneConfiguration}
      *
      * @param config The configuration to use
-     * @return A sequence of transforms constructed from the supplied configuration
+     * @return The pipeline constructed from the supplied configuration
      * @throws ComponentInitializationException If an issue occurs loading transforms from configuration
      */
     @SuppressWarnings("rawtypes")
-    public static List<BackbonePipelineComponent<?, ?>> buildTransformsFromConfig(BackboneConfiguration config) throws ComponentInitializationException {
-        LinkedList<BackbonePipelineComponent<?, ?>> pipelineConfig = new LinkedList<>();
+    public static BackboneETLPipeline buildETLPipelineFromConfig(BackboneConfiguration config) throws ComponentInitializationException {
+
+        BackboneETLPipeline pipeline = new BackboneETLPipeline();
+        LinkedList<Transform> transforms = new LinkedList<>();
         BackbonePipelineComponentConfiguration[] configs = config.getPipeline().toArray(new BackbonePipelineComponentConfiguration[0]);
+        if (configs.length < 2) {
+            throw new ComponentInitializationException(new IllegalArgumentException("Pipelines must contain at a minimum a Extract and a Load"));
+        }
         for (int i = 0; i < configs.length; i++) {
             try {
                 Class<? extends BackbonePipelineComponent> clazz = configs[i].getClazz();
                 Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
                 BackbonePipelineComponent instance = ctor.newInstance();
-                instance.initFromConfig(configs[i].getConfig());
-                pipelineConfig.addLast(instance);
-                if (i == 0 && !(instance instanceof Extract)) {
-                    throw new IllegalArgumentException("Pipelines must begin with an extract operation, " +
-                            "found a " + instance.getClass().getName() + " instead!");
-                } if (i == configs.length - 1  && !(instance instanceof Load)) {
-                    throw new IllegalArgumentException("Pipelines must end with a Load operation, " +
-                            "found a " + instance.getClass().getName() + " instead!");
-                } else if (!(instance instanceof Transform)) {
-                    throw new IllegalArgumentException("Intermediate pipeline operations must be transforms, found a " +
-                            instance.getClass().getName() + " instead at index " + i);
+
+                if (i == 0) {
+                    if (!(instance instanceof Extract)) {
+                        throw new IllegalArgumentException("Pipelines must begin with an extract operation, " +
+                                "found a " + instance.getClass().getName() + " instead!");
+                    } else {
+                        pipeline.setExtract((Extract) instance);
+                    }
+                } else if (i == configs.length - 1) {
+                    if (!(instance instanceof Load)) {
+                        throw new IllegalArgumentException("Pipelines must end with a Load operation, " +
+                                "found a " + instance.getClass().getName() + " instead!");
+                    } else {
+                        pipeline.setLoad((Load) instance);
+                    }
+                } else {
+                    if (!(instance instanceof Transform)) {
+                        throw new IllegalArgumentException("Intermediate pipeline operations must be transforms, found a " +
+                                instance.getClass().getName() + " instead at index " + i);
+                    } else {
+                        instance.initFromConfig(configs[i].getConfig());
+                        transforms.addLast((Transform) instance);
+                    }
                 }
+
             } catch (Throwable t) {
                 throw new ComponentInitializationException(t);
             }
         }
-        return pipelineConfig;
+        pipeline.setTransforms(transforms);
+        return pipeline;
     }
 
+
+    public static class BackboneETLPipeline {
+        public Extract extract;
+        public List<Transform> transforms;
+        public Load load;
+
+        public Extract getExtract() {
+            return extract;
+        }
+
+        public void setExtract(Extract extract) {
+            this.extract = extract;
+        }
+
+        public List<Transform> getTransforms() {
+            return transforms;
+        }
+
+        public void setTransforms(List<Transform> transforms) {
+            this.transforms = transforms;
+        }
+
+        public Load getLoad() {
+            return load;
+        }
+
+        public void setLoad(Load load) {
+            this.load = load;
+        }
+    }
 }

@@ -30,7 +30,7 @@
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
         "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
-        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date) VALUES (?, ?, ?, ?, ?, ?, ?);",
+        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
         "paramMappings": [
           "note_id",
           "section_id",
@@ -38,7 +38,8 @@
           "matched_sentence",
           "concept_code",
           "concept_source",
-          "nlp_run_dtm"
+          "nlp_run_dtm",
+          "modifiers"
         ]
       }
     }
