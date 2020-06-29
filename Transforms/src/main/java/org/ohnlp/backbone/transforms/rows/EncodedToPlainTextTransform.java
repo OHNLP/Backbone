@@ -31,7 +31,7 @@ import java.util.List;
  * Plaintext transform is accomplished using the Apache Tika library, and as such compatibility is congruent with the
  * version of tika used. For more information, please reference the Tika documentation page on supported formats.
  */
-public class EncodedToPlainTextTransform extends Transform<Row, Row> {
+public class EncodedToPlainTextTransform extends Transform {
 
     private String inputField;
     private String outputField;

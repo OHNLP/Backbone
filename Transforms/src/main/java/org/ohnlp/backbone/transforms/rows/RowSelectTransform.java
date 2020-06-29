@@ -14,7 +14,7 @@ import java.util.List;
  * Transform that performs selection (filtering) of columns within a {@link Row} as well as the option to rename
  * columns wrapped as a Backbone configuration-compatible element
  */
-public class RowSelectTransform extends Transform<Row, Row> {
+public class RowSelectTransform extends Transform {
 
     private Select.Fields<Row> select;
 

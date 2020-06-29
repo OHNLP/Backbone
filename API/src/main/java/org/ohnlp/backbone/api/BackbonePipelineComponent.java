@@ -19,13 +19,4 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      *                                          unexpected values
      */
     public abstract void initFromConfig(JsonNode config) throws ComponentInitializationException;
-
-    /**
-     * @return A java class that represents {@link I}
-     */
-    public abstract Class<?> getInputType();
-    /**
-     * @return A java class that represents {@link O}
-     */
-    public abstract Class<?> getOutputType();
 }

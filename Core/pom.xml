@@ -12,6 +12,35 @@
 
     <artifactId>Core</artifactId>
 
+    <build>
+        <plugins>
+            <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+            <plugin>
+                <groupId>com.github.sampov2</groupId>
+                <artifactId>onejar-maven-plugin</artifactId>
+                <version>1.4.6</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                            <attachToBuild>true</attachToBuild>
+                        </configuration>
+                        <goals>
+                            <goal>one-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>com.github.sampov2.onejar-maven-plugin</id>
+            <url>http://maven.codeforcode.com/repository</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <description>
         Contains components supporting core backbone functionality and pipeline construction
     </description>
@@ -20,6 +49,16 @@
         <dependency>
             <groupId>org.ohnlp.backbone</groupId>
             <artifactId>API</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ohnlp.backbone.io</groupId>
+            <artifactId>IO</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ohnlp.backbone.transforms</groupId>
+            <artifactId>Transforms</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
