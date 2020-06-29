@@ -1,0 +1,46 @@
+{
+  "id": "nlp_ohdsi_to_ohdsi",
+  "description": "A pipeline configuration that extracts clinical narratives from OHDSI CDM, runs a MedTagger NLP rulesets, and outputs back to OHDSI CDM.",
+  "pipeline": [
+    {
+      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCExtract",
+      "config": {
+        "_desc": "An example configuration to extract notes from mssql OHDSI CDM instance, replace values as appropriate",
+        "url": "jdbc:sqlserver://your_jdbc_url_here",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "user": "your_mssql_username",
+        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "query": "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE"
+      }
+    },
+    {
+      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransformComponent",
+      "config": {
+        "_desc": "Runs NLP. In this case, we use COVID-19 ruleset that is bundled by default as an example",
+        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
+        "input": "note_text",
+        "ruleset": "medtaggerieresources.covid19"
+      }
+    },
+    {
+      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCLoad",
+      "config": {
+        "_desc": "An example configuration to load NLP artifacts into OHDSI CDM, replace values as appropriate",
+        "url": "jdbc:sqlserver://your_jdbc_url_here",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "user": "your_mssql_username",
+        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date) VALUES (?, ?, ?, ?, ?, ?, ?);",
+        "paramMappings": [
+          "note_id",
+          "section_id",
+          "matched_text",
+          "matched_sentence",
+          "concept_code",
+          "concept_source",
+          "nlp_run_dtm"
+        ]
+      }
+    }
+  ]
+}
