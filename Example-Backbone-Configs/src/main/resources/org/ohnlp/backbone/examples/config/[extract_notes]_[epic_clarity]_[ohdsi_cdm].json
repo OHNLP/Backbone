@@ -1,0 +1,42 @@
+{
+  "id": "notes_clarity_to_ohdsi",
+  "description": "A pipeline configuration that extracts clinical narratives from Epic Clarity into OHDSI CDM.",
+  "pipeline": [
+    {
+      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCExtract",
+      "config": {
+        "_desc": "An example configuration to extract notes from mssql, replace values as appropriate",
+        "url": "jdbc:sqlserver://your_jdbc_url_here",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "user": "your_mssql_username",
+        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "query": "SELECT hsp.pat_id, note_meta.pat_enc_csn_id text.note_id, text.line, coalesce(note_meta.create_instant_dttm, text.contact_date) start_date, text.note_text FROM clarity.hno_note_text text JOIN clarity.hno_info note_meta ON text.note_id = note_meta.note_id JOIN clarity.pat_enc_hsp hsp ON text.pat_enc_csn_id = hsp.pat_enc_csn_id;"
+      }
+    },
+    {
+      "clazz": "org.ohnlp.backbone.transforms.rows.EncodedToPlainTextTransform",
+      "config": {
+        "_desc": "replaces note_text field in-place (from output of previous step query)",
+        "input": "note_text",
+        "output": "note_text"
+      }
+    },
+    {
+      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCLoad",
+      "config": {
+        "_desc": "An example configuration to load notes into OHDSI CDM, replace values as appropriate",
+        "url": "jdbc:sqlserver://your_jdbc_url_here",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "user": "your_mssql_username",
+        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "query": "INSERT INTO CDM_SCHEMA.NOTE (note_id, person_id, note_datetime, note_type_concept_id, note_class_concept_id, note_text, encoding_concept_id, language_concept_id) VALUES (?, ?, ?, 44814645, 1025719, ?, 32678, 4180186);",
+        "paramMappings": [
+          "note_id",
+          "pat_id",
+          "start_date",
+          "note_text"
+        ]
+      }
+    }
+  ]
+}

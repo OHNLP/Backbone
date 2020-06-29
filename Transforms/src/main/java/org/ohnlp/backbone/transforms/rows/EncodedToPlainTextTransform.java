@@ -78,18 +78,18 @@ public class EncodedToPlainTextTransform extends Transform<Row, Row> {
 
         @ProcessElement
         public void processElement(Row input, OutputReceiver<Row> output) throws TikaException, SAXException, IOException {
-            byte[] encoded = input.getBytes(inputField);
-            parser.parse(new ByteArrayInputStream(encoded), handler, metadata);
-            String decoded = handler.toString(); // TODO Double check if
+            String encoded = input.getString(inputField);
+            parser.parse(new ByteArrayInputStream(encoded.getBytes(StandardCharsets.UTF_8)), handler, metadata);
+            String decoded = handler.toString();
             Row out;
             if (!input.getSchema().hasField(inputField)) {
                 throw new IllegalArgumentException("Expected field " + inputField + " not found in rtf transform input");
             }
             if (!input.getSchema().hasField(outputField)) { // Output not in schema, compose new row column
                 List<Schema.Field> fields = new LinkedList<>(input.getSchema().getFields());
-                fields.add(Schema.Field.of(outputField, Schema.FieldType.BYTES));
+                fields.add(Schema.Field.of(outputField, Schema.FieldType.STRING));
                 Schema schema = Schema.of(fields.toArray(new Schema.Field[0]));
-                out = Row.withSchema(schema).addValues(input.getValues()).addValue(decoded.getBytes(StandardCharsets.UTF_8)).build();
+                out = Row.withSchema(schema).addValues(input.getValues()).addValue(decoded).build();
             } else {
                 // Otherwise just replace in-place
                 Row.FieldValueBuilder outBuilder = Row.fromRow(input);
