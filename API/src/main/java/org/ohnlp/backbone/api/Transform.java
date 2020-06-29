@@ -1,7 +1,5 @@
 package org.ohnlp.backbone.api;
 
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PCollection;
 
 /**
@@ -9,7 +7,6 @@ import org.apache.beam.sdk.values.PCollection;
  * @param <I> The input type
  * @param <O> The output type
  */
-public abstract class Transform<I, O> extends PTransform<PCollection<I>, PCollection<O>> implements BackbonePipelineComponent {
-
+public abstract class Transform<I, O> extends BackbonePipelineComponent<PCollection<I>, PCollection<O>> {
 
 }

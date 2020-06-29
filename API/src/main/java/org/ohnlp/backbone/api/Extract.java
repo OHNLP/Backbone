@@ -10,5 +10,14 @@ import org.apache.beam.sdk.values.Row;
  *
  * It is expected that implementations will always output in Beam {@link Row} format
  */
-public abstract class Extract extends PTransform<PBegin, PCollection<Row>> implements BackbonePipelineComponent {
+public abstract class Extract extends BackbonePipelineComponent<PBegin, PCollection<Row>> {
+    @Override
+    public Class<?> getInputType() {
+        return Void.class;
+    }
+
+    @Override
+    public Class<?> getOutputType() {
+        return Row.class;
+    }
 }
