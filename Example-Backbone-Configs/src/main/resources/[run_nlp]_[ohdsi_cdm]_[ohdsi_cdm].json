@@ -19,7 +19,8 @@
         "_desc": "Runs NLP. In this case, we use COVID-19 ruleset that is bundled by default as an example",
         "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
         "input": "note_text",
-        "ruleset": "medtaggerieresources.covid19"
+        "ruleset": "covid19",
+        "mode": "standalone"
       }
     },
     {
