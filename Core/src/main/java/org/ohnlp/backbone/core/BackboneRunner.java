@@ -20,7 +20,7 @@ public class BackboneRunner {
                 PipelineOptionsFactory.fromArgs(args).create().as(BackbonePipelineOptions.class);
         Pipeline p = Pipeline.create(options);
         // First read in the config and create an execution plan
-        BackboneConfiguration config = new ObjectMapper().readValue(new File(options.getConfig()), BackboneConfiguration.class);
+        BackboneConfiguration config = new ObjectMapper().readValue(BackboneRunner.class.getResourceAsStream("/configs/" + options.getConfig()), BackboneConfiguration.class);
         PipelineBuilder.BackboneETLPipeline pipeline = PipelineBuilder.buildETLPipelineFromConfig(config);
         // Now run in sequence
         // - Extract

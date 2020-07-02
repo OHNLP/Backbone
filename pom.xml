@@ -27,6 +27,7 @@
         <module>Transforms</module>
         <module>Core</module>
         <module>Example-Backbone-Configs</module>
+        <module>Plugin-Manager</module>
     </modules>
 
     <build>
