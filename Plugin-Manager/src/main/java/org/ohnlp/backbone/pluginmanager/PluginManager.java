@@ -5,11 +5,21 @@ import org.apache.beam.repackaged.core.org.apache.commons.compress.utils.FileNam
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PluginManager {
+
+    public static void main(String... args) throws IOException {
+        List<File> modules = Arrays.asList(Objects.requireNonNull(new File("modules").listFiles()));
+        List<File> configs = Arrays.asList(Objects.requireNonNull(new File("configs").listFiles()));
+        List<File> resources = Arrays.asList(Objects.requireNonNull(new File("resources").listFiles()));
+        File source = new File("Backbone-Core-Base.jar");
+        File target = new File("Backbone-Core.jar");
+        Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        install(target, modules, configs, resources);
+        System.out.println("Packaging complete to " + target.getAbsolutePath());
+    }
+
     /**
      * Packs an OHNLP backbone executable with the specified set of modules,  configurations, and resources
      *
@@ -18,7 +28,7 @@ public class PluginManager {
      * @param configurations A set of configuration files to install
      * @param resources      A set of resource directories to install
      */
-    public void install(File target, List<File> modules, List<File> configurations, List<File> resources) {
+    public static void install(File target, List<File> modules, List<File> configurations, List<File> resources) {
         Map<String, String> env = new HashMap<>();
         env.put("create", "false");
         try (FileSystem fs = FileSystems.newFileSystem(target.toURI(), env)) {
