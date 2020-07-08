@@ -58,23 +58,27 @@ public class EncodedToPlainTextTransform extends Transform {
 
     /*
      * The actual DoFn must be in it's own self-contained class due to tika components not being serializable, rather
-     * the components should be initialized on each separate executor instance
+     * the components should be initialized on each separate executor instance via the Setup annotation
      */
     private static class TikaDecoderFunction extends DoFn<Row, Row> {
-        private final AutoDetectParser parser;
-        private final BodyContentHandler handler;
-        private final Metadata metadata;
+        private transient AutoDetectParser parser;
+        private transient BodyContentHandler handler;
+        private transient Metadata metadata;
+
         private final String inputField;
         private final String outputField;
 
         public TikaDecoderFunction(String inputField, String outputField) {
-            this.parser = new AutoDetectParser();
-            this.handler = new BodyContentHandler();
-            this.metadata = new Metadata();
             this.inputField = inputField;
             this.outputField = outputField;
         }
 
+        @Setup
+        public void init() {
+            this.parser = new AutoDetectParser();
+            this.handler = new BodyContentHandler();
+            this.metadata = new Metadata();
+        }
 
         @ProcessElement
         public void processElement(Row input, OutputReceiver<Row> output) throws TikaException, SAXException, IOException {
