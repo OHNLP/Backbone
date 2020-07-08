@@ -14,13 +14,20 @@
       }
     },
     {
-      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransformComponent",
+      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransform",
       "config": {
         "_desc": "Runs NLP. In this case, we use COVID-19 ruleset that is bundled by default as an example",
         "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
         "input": "note_text",
         "ruleset": "covid19",
         "mode": "standalone"
+      }
+    },
+    {
+      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerOutputToOHDSIFormatTransform",
+      "config": {
+        "_desc": "Converts MedTagger output to OHDSI format",
+        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger"
       }
     },
     {
@@ -34,13 +41,13 @@
         "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
         "paramMappings": [
           "note_id",
-          "section_id",
-          "matched_text",
-          "matched_sentence",
-          "concept_code",
-          "concept_source",
-          "nlp_run_dtm",
-          "modifiers"
+          "section_concept_id",
+          "lexical_variant",
+          "snippet",
+          "note_nlp_concept_id",
+          "note_nlp_source_concept_id",
+          "nlp_datetime",
+          "term_modifiers"
         ]
       }
     }
