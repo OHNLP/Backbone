@@ -30,6 +30,14 @@
         <module>Plugin-Manager</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OHNLP Backbone Maven Packages</name>
+            <url>https://maven.pkg.github.com/OHNLP/Backbone</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
