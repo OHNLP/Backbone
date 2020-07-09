@@ -1,4 +1,4 @@
-name: Maven Build, Ant Packaging, Followed by Publish to Release on tags pushed
+name: Release
 
 on:
   push:
