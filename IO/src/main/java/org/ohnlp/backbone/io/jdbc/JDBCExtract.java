@@ -18,6 +18,18 @@ public class JDBCExtract extends Extract {
     /**
      * Initializes a Beam JdbcIO Provider
      *
+     * <p>
+     * Expected configuration structure:
+     * <pre>
+     *     {
+     *         "url": "jdbc_url_to_database",
+     *         "driver": "jdbc.driver.class",
+     *         "user": "dbUsername",
+     *         "password": "dbPassword",
+     *         "query": "query_to_execute_for_extract_task"
+     *     }
+     * </pre>
+     *
      * @param config The configuration section pertaining to this component
      * @throws ComponentInitializationException if an error occurs during initialization or if configuraiton contains
      *                                          unexpected values

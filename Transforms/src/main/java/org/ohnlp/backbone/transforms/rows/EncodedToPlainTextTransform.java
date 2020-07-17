@@ -30,6 +30,15 @@ import java.util.List;
  * <br/>
  * Plaintext transform is accomplished using the Apache Tika library, and as such compatibility is congruent with the
  * version of tika used. For more information, please reference the Tika documentation page on supported formats.
+ *
+ * <p>
+ * Expected configuration structure:
+ * <pre>
+ *     {
+ *         "input": "input_column_name",
+ *         "output": "output_column_name"
+ *     }
+ * </pre>
  */
 public class EncodedToPlainTextTransform extends Transform {
 

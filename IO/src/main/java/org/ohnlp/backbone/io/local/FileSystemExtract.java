@@ -9,7 +9,6 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
-import org.joda.time.Duration;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 

@@ -13,6 +13,17 @@ import java.util.List;
 /**
  * Transform that performs selection (filtering) of columns within a {@link Row} as well as the option to rename
  * columns wrapped as a Backbone configuration-compatible element
+ *
+ * <p>
+ * Expected configuration structure <b>Note: </b> config structure is an array:
+ * <pre>
+ *     [
+ *         "inputFieldName1",
+ *         "inputFieldName2|outputFieldName2",
+ *         ...
+ *         etc.
+ *     ]
+ * </pre>
  */
 public class RowSelectTransform extends Transform {
 

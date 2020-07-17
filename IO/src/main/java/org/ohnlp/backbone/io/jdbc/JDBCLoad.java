@@ -19,6 +19,24 @@ import java.util.List;
  * Performs data load using a JDBC connector
  * This class is essentially a configuration wrapper around the beam provided {@link JdbcIO} transform with additional
  * support added for user-customizeable PreparedStatement usage
+ *
+ * <p>
+ * Expected configuration structure:
+ * <pre>
+ *     {
+ *         "url": "jdbc_url_to_database",
+ *         "driver": "jdbc.driver.class",
+ *         "user": "dbUsername",
+ *         "password": "dbPassword",
+ *         "query": "query_to_execute_for_load in preparedstatemnt format. Substitute ? for variables (1-indexed)",
+ *         "paramMappings": [
+ *              "this_column_name_will_be_mapped_to_the_first_?",
+ *              "this_column_name_will_be_mapped_to_the_second_?",
+ *              ...
+ *              etc.
+ *         ]
+ *     }
+ * </pre>
  */
 public class JDBCLoad extends Load {
     private JdbcIO.Write<Row> runnableInstance;
