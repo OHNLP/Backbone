@@ -57,7 +57,7 @@ public class FileSystemExtract extends Extract {
                 .apply(FileIO.readMatches().withDirectoryTreatment(FileIO.ReadMatches.DirectoryTreatment.SKIP))
                 .apply(ParDo.of(new DoFn<FileIO.ReadableFile, Row>() {
                     @ProcessElement
-                    public void processElement(FileIO.ReadableFile input, OutputReceiver<Row> output) throws IOException {
+                    public void processElement(@Element FileIO.ReadableFile input, OutputReceiver<Row> output) throws IOException {
                         String id = input.getMetadata().resourceId().getFilename();
                         String content = input.readFullyAsUTF8String();
                         output.output(Row.withSchema(rowSchema)

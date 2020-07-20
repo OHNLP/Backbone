@@ -90,7 +90,7 @@ public class EncodedToPlainTextTransform extends Transform {
         }
 
         @ProcessElement
-        public void processElement(Row input, OutputReceiver<Row> output) throws TikaException, SAXException, IOException {
+        public void processElement(@Element Row input, OutputReceiver<Row> output) throws TikaException, SAXException, IOException {
             String encoded = input.getString(inputField);
             parser.parse(new ByteArrayInputStream(encoded.getBytes(StandardCharsets.UTF_8)), handler, metadata);
             String decoded = handler.toString();
