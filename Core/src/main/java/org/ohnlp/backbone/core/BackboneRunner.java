@@ -1,16 +1,15 @@
 package org.ohnlp.backbone.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 
-import java.io.File;
 import java.io.IOException;
 
 public class BackboneRunner {

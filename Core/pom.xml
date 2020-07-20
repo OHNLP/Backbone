@@ -62,6 +62,19 @@
             <artifactId>Transforms</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <!-- Adds a dependency on the Beam Google Cloud Platform IO module. -->
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-runners-direct-java</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

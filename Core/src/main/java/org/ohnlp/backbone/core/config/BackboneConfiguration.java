@@ -1,10 +1,14 @@
 package org.ohnlp.backbone.core.config;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 /**
  * This class represents the configuration used for constructing pipelines
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BackboneConfiguration {
     private String id;
     private String decription;

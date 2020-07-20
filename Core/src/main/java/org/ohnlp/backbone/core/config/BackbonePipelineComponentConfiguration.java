@@ -1,11 +1,13 @@
 package org.ohnlp.backbone.core.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
 /**
  * Represents a declaration and associated configuration of a specific pipeline component.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BackbonePipelineComponentConfiguration {
     /**
      * The class of the pipeline component, should extend {@link BackbonePipelineComponent}

@@ -9,10 +9,10 @@ SET GCP_REGION=YOUR_GOOGLE_CLOUD_REGION
 
 IF EXIST bin\Backbone-Core-Packaged.jar (
     java -jar bin\Backbone-Core-Packaged.jar \
-    --config=$BACKBONE_CONFIG \
+    --config=%BACKBONE_CONFIG% \
     --runner=DataflowRunner \
-    --project=$GCP_PROJECT_ID \
-    --region=$GCP_REGION
+    --project=%GCP_PROJECT_ID% \
+    --region=%GCP_REGION%
 ) ELSE (
     ECHO Packaged backbone installation does not exist. Run package_modules_and_configs for your platform first!
 )
