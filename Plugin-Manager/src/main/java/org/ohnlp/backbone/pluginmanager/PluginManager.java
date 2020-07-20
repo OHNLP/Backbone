@@ -32,20 +32,25 @@ public class PluginManager {
     public static void install(File target, List<File> modules, List<File> configurations, List<File> resources) {
         Map<String, String> env = new HashMap<>();
         env.put("create", "false");
-        try (FileSystem fs = FileSystems.newFileSystem(target.toURI(), env)) {
+        //noinspection Since15
+        try (FileSystem fs = FileSystems.newFileSystem(target.toPath(), env)) {
             for (File module : modules) {
                 Files.copy(module.toPath(), fs.getPath("/lib/" + module.getName()), StandardCopyOption.REPLACE_EXISTING);
             }
+            Files.createDirectory(fs.getPath("/configs"));
             for (File config : configurations) {
                 Files.copy(config.toPath(), fs.getPath("/configs/" + config.getName()), StandardCopyOption.REPLACE_EXISTING);
             }
+            Files.createDirectory(fs.getPath("/resources"));
             for (File resource : resources) {
                 String resourceDir = resource.getParentFile().toPath().toAbsolutePath().toString();
                 if (resource.isDirectory()) {
                     // Recursively find all files in directory (up to arbitrary max depth of 999
                     Files.find(resource.toPath(), 999, (p, bfa) -> bfa.isRegularFile()).forEach(p -> {
                         try {
-                            Files.copy(p, fs.getPath(p.toAbsolutePath().toString().replace(resourceDir, "/resources/")), StandardCopyOption.REPLACE_EXISTING);
+                            Path filePath = fs.getPath(p.toAbsolutePath().toString().replace(resourceDir, "/resources"));
+                            Files.createDirectories(filePath.getParent());
+                            Files.copy(p, filePath, StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             throw new IllegalStateException(e);
                         }
