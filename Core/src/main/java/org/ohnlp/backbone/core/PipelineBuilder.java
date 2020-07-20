@@ -44,6 +44,7 @@ public class PipelineBuilder {
                         throw new IllegalArgumentException("Pipelines must begin with an extract operation, " +
                                 "found a " + instance.getClass().getName() + " instead!");
                     } else {
+                        instance.initFromConfig(configs[i].getConfig());
                         pipeline.setExtract((Extract) instance);
                     }
                 } else if (i == configs.length - 1) {
@@ -51,6 +52,7 @@ public class PipelineBuilder {
                         throw new IllegalArgumentException("Pipelines must end with a Load operation, " +
                                 "found a " + instance.getClass().getName() + " instead!");
                     } else {
+                        instance.initFromConfig(configs[i].getConfig());
                         pipeline.setLoad((Load) instance);
                     }
                 } else {
