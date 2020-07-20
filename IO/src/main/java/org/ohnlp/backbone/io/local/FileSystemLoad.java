@@ -9,6 +9,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.apache.beam.vendor.grpc.v1p26p0.com.google.common.base.Joiner;
+import org.apache.commons.text.StringEscapeUtils;
 import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
@@ -48,8 +49,9 @@ public class FileSystemLoad extends Load {
 
     @Override
     public PDone expand(PCollection<Row> input) {
-        WriteFilesResult<Void> result = writer.expand(input);
-        return null;
+
+        input.apply(writer);
+        return PDone.in(input.getPipeline());
     }
 
     private static class CSVSink implements FileIO.Sink<Row> {
@@ -62,12 +64,11 @@ public class FileSystemLoad extends Load {
         }
 
         public void write(Row element) throws IOException {
-            // TODO more robust csv output format
             if (!wroteHeader) {
-                writer.println(Joiner.on(",").join(element.getSchema().getFieldNames()));
+                writer.println(element.getSchema().getFieldNames().stream().map(StringEscapeUtils::escapeCsv).collect(Collectors.joining(",")));
                 wroteHeader = true;
             }
-            writer.println(Joiner.on(",").join(element.getValues().stream().map(Object::toString).collect(Collectors.toList())));
+            writer.println(Joiner.on(",").join(element.getValues().stream().map(o -> StringEscapeUtils.escapeCsv(o.toString())).collect(Collectors.toList())));
         }
 
         public void flush() throws IOException {
