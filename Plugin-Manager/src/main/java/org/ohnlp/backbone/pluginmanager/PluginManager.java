@@ -32,7 +32,6 @@ public class PluginManager {
     public static void install(File target, List<File> modules, List<File> configurations, List<File> resources) {
         Map<String, String> env = new HashMap<>();
         env.put("create", "false");
-        //noinspection Since15
         try (FileSystem fs = FileSystems.newFileSystem(target.toPath(), env)) {
             for (File module : modules) {
                 Files.copy(module.toPath(), fs.getPath("/lib/" + module.getName()), StandardCopyOption.REPLACE_EXISTING);
