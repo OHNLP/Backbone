@@ -18,7 +18,7 @@ public class PluginManager {
         File target = new File("bin/Backbone-Core-Packaged.jar");
         Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         install(target, modules, configs, resources);
-        JOptionPane.showMessageDialog(null, "Packaging complete! Final Packaged File: " + target.getAbsolutePath(), "Backbone Packaging Complete", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Packaging complete! Final Packaged File: " + target.getAbsolutePath(), "Backbone Packaging Complete", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
