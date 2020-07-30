@@ -10,6 +10,7 @@ import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -91,6 +92,9 @@ public class JDBCLoad extends Load {
             // Do type resolution only once
             if (this.execute == null) {
                 Schema.TypeName type = row.getSchema().getField(fieldName).getType().getTypeName();
+                if (type.isLogicalType()) {
+                    type = row.getSchema().getField(fieldName).getType().getLogicalType().getBaseType().getTypeName();
+                }
                 switch (type) {
                     case BYTE:
                         this.execute = (data, statement) -> {
