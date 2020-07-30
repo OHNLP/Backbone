@@ -17,6 +17,15 @@
         Provides options for ingesting data for OHNLP backbone infrastructure
     </description>
 
+    <properties>
+        <oracle.version>19.7.0.0</oracle.version>
+        <mysql.version>8.0.21</mysql.version>
+        <postgresql.version>42.2.14.jre7</postgresql.version>
+        <mssql.version>8.2.2.jre8</mssql.version>
+        <db2.version>11.5.4.0</db2.version>
+        <mariadb.version>2.6.2</mariadb.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.ohnlp.backbone</groupId>
@@ -34,6 +43,37 @@
             <artifactId>commons-text</artifactId>
             <version>1.7</version>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>${oracle.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>${mssql.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.db2</groupId>
+            <artifactId>jcc</artifactId>
+            <version>${db2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>${mariadb.version}</version>
+        </dependency>
+
     </dependencies>
 
 </project>

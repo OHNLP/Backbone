@@ -9,6 +9,7 @@ import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
+import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -76,10 +77,10 @@ public class JDBCLoad extends Load {
     }
 
     // Handles execution of row to preparedstatement type mappings
-    private class RowToPSMappingFunction {
+    private static class RowToPSMappingFunction implements Serializable {
         private final String fieldName;
         private final int idx;
-        private RowMappingFunction execute;
+        private transient RowMappingFunction execute;
 
         public RowToPSMappingFunction(int index, String fieldName) {
             this.idx = index;
