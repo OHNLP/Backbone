@@ -27,7 +27,8 @@
       "clazz": "org.ohnlp.medtagger.backbone.MedTaggerOutputToOHDSIFormatTransform",
       "config": {
         "_desc": "Converts MedTagger output to OHDSI format",
-        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger"
+        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
+        "ruleset": "covid19"
       }
     },
     {
