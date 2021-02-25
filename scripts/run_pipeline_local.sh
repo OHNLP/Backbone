@@ -9,9 +9,9 @@ BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 BACKBONEDIR=$(cd `dirname $0` && pwd)
 cd $BACKBONEDIR
 
-BACKBONE_PACKAGED_FILE=bin/Backbone-Core-Packaged.jar
+BACKBONE_PACKAGED_FILE=bin/Backbone-Core-LocalDebug-Packaged.jar
 if [ -f "$BACKBONE_PACKAGED_FILE" ]; then
-    java -jar bin/Backbone-Core-Packaged.jar --config=$BACKBONE_CONFIG
+    java -jar bin/Backbone-Core-LocalDebug-Packaged.jar --config=$BACKBONE_CONFIG
 else
     echo "Packaged backbone installation does not exist. Run package_modules_and_configs for your platform first!"
 fi

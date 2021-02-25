@@ -46,7 +46,7 @@ then simply execute when complete.
 
 ## Pipeline Configuration
 Configurations, located in `BACKBONE_ROOT/configs`, define precisely what actions should be taken during an ETL task. For 
-convenience, several example pipeline configurations are supplied within the aforementioned folder in the format \[task name]_\[data_source]_\[data_target].json
+convenience, several example pipeline configurations are supplied within the aforementioned folder in the format \[task name]\_\[data_source]\_\[data_target].json
 
 Fundamentally, a configuration is a json file bearing the following structure:
 

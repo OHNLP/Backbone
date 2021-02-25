@@ -6,12 +6,12 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
     <groupId>org.ohnlp.backbone.io</groupId>
-    <artifactId>IO</artifactId>
+    <artifactId>io</artifactId>
 
     <description>
         Provides options for ingesting data for OHNLP backbone infrastructure

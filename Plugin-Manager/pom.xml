@@ -6,11 +6,11 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
-    <artifactId>Plugin-Manager</artifactId>
+    <artifactId>plugin-manager</artifactId>
 
     <description>
         Handles management (installation and uninstallation) of pipeline configurations and backbone modules into a

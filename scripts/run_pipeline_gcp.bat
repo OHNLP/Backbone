@@ -7,8 +7,8 @@ SET BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 SET GCP_PROJECT_ID=YOUR_GCP_PROJECT_ID
 SET GCP_REGION=YOUR_GOOGLE_CLOUD_REGION
 
-IF EXIST bin\Backbone-Core-Packaged.jar (
-    java -jar bin\Backbone-Core-Packaged.jar \
+IF EXIST bin\Backbone-Core-GCP-Packaged.jar (
+    java -jar bin\Backbone-Core-GCP-Packaged.jar \
     --config=%BACKBONE_CONFIG% \
     --runner=DataflowRunner \
     --project=%GCP_PROJECT_ID% \

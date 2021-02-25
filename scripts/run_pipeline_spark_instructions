@@ -1,12 +1,19 @@
 To run the pipeline on a spark cluster, do the following:
 
 1. Package your modules and configs by running package_modules_and_configs
-2. Upload bin\Backbone-Core-Packaged.jar file to a location accessible by spark-submit
+2. Upload bin\Backbone-Core-Spark-Packaged.jar file to a location accessible by spark-submit
 3. spark-submit --class com.simontuffs.onejar.Boot --master spark://HOST:PORT \
-        path/to/Backbone-Core-Packaged.jar --runner=SparkRunner --config=NAME_OF_CONFIG_TO_USE.json
+        path/to/Backbone-Core-Spark-Packaged.jar --runner=SparkRunner --config=NAME_OF_CONFIG_TO_USE.json
    Note: This may change depending on how you perform the spark-submit (e.g. if you use Apache Livy), you may need to
    adapt the command accordingly. --runner and --config should be supplied as application arguments.
 
    For a full listing of available options, consult https://beam.apache.org/documentation/runners/spark/
-4. If running in local mode (--master=local[#]), you will need to also supply spark-core and spark-streaming as part of
-   the application classpath by supplying the two jar files as modules and rerunning package_modules_and_configs
+
+
+Important Notes:
+- Backbone currently only supports Spark v2.x
+- If running in local mode (--master=local[#]), you will need to have to have spark binaries in the final shaded
+  package. Two spark variants are provided, if running in local mode, simply replace all instances of
+  Backbone-Core-Spark-Packaged.jar with Backbone-Core-Spark-Standalone-Packaged.jar in the above instructions. Note that
+  standalone assumes v2.4.7 by default but this can be changed in Core/pom.xml by changing the spark.version property
+  in the spark-standalone profile

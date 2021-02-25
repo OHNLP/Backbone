@@ -1,23 +1,115 @@
 <project name="Backbone Build" default="dist" basedir=".">
     <description>
-        Apache ANT Buildfile for creating Backbone releases, to be run after maven
+        Apache ANT Buildfile for creating Backbone releases including all environments
     </description>
     <property name="dist" location="dist"/>
 
+    <!-- Maven Environment Setup -->
+    <condition property="isWindows">
+        <os family="windows" />
+    </condition>
+
+    <condition property="isUnix">
+        <os family="unix" />
+    </condition>
+
+    <target name="mvn_windows" if="isWindows">
+        <property name="mvn.executable" value="cmd" />
+        <property name="mvn.args" value="/c" />
+    </target>
+
+    <target name="mvn_unix" if="isUnix">
+        <property name="mvn.executable" value="sh" />
+        <property name="mvn.args" value="-c" />
+    </target>
+
+    <!-- The actual target for running maven -->
+    <target name="run-mvn-goals" depends="mvn_windows, mvn_unix">
+        <exec dir="${basedir}" executable="${mvn.executable}">
+            <arg line="${mvn.args} 'mvn ${mvn_goals}'" />
+        </exec>
+
+    </target>
+
+    <!-- Main Build Process Begins Here -->
+    <!-- Create the build directory structure used by compile -->
     <target name="init">
-        <!-- Create the build directory structure used by compile -->
         <mkdir dir="${dist}"/>
     </target>
 
+    <!-- Generate shared binary distribution -->
+    <target name="exec-general-build" description="compiles non-platform-specific components" depends="init">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install"/>
+        </antcall>
+    </target>
 
-    <target name="dist"
-            description="generate the distribution" depends="init">
+    <target name="dist-general"
+            description="generate the distribution's non-platform specific structure" depends="exec-general-build">
         <copydir src="Example-Backbone-Configs/src/main/resources" dest="${dist}/configs"/>
         <copydir src="scripts" dest="${dist}"/>
-        <copy file="Core/target/Backbone-Core.jar" tofile="${dist}/bin/Backbone-Core.jar"/>
         <copy file="Plugin-Manager/target/Plugin-Manager.jar" tofile="${dist}/bin/Plugin-Manager.jar"/>
         <mkdir dir="${dist}/modules"/>
         <mkdir dir="${dist}/resources"/>
+    </target>
+
+    <!-- Generate Flink Distribution -->
+    <target name="exec-flink" description="compiles flink components" depends="dist-general">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P flink"/>
+        </antcall>
+    </target>
+
+    <target name="dist-flink" depends="exec-flink">
+        <copy file="Core/target/Backbone-Core-Flink.jar" tofile="${dist}/bin/Backbone-Core-Flink.jar"/>
+    </target>
+
+    <!-- Generate GCP Distribution -->
+    <target name="exec-gcp" description="compiles gcp components" depends="dist-flink">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P gcp"/>
+        </antcall>
+    </target>
+
+    <target name="dist-gcp" depends="exec-gcp">
+        <copy file="Core/target/Backbone-Core-GCP.jar" tofile="${dist}/bin/Backbone-Core-GCP.jar"/>
+    </target>
+
+    <!-- Generate Local Debug (Direct Runner) Distribution -->
+    <target name="exec-direct" description="compiles local debug components" depends="dist-gcp">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P local-debug"/>
+        </antcall>
+    </target>
+
+    <target name="dist-direct" depends="exec-direct">
+        <copy file="Core/target/Backbone-Core-LocalDebug.jar" tofile="${dist}/bin/Backbone-Core-LocalDebug.jar"/>
+    </target>
+
+    <!-- Generate Spark Distribution -->
+    <target name="exec-spark" description="compiles spark components" depends="dist-direct">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P spark"/>
+        </antcall>
+    </target>
+
+    <target name="dist-spark" depends="exec-spark">
+        <copy file="Core/target/Backbone-Core-Spark.jar" tofile="${dist}/bin/Backbone-Core-Spark.jar"/>
+    </target>
+
+    <!-- Generate Spark Standalone Distribution -->
+    <target name="exec-spark-standalone" description="compiles spark standalone components" depends="dist-spark">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P spark"/>
+        </antcall>
+    </target>
+
+    <target name="dist-spark-standalone" depends="exec-spark-standalone">
+        <copy file="Core/target/Backbone-Core-Spark-Standalone.jar" tofile="${dist}/bin/Backbone-Core-Spark-Standalone.jar"/>
+    </target>
+
+    <!-- General Final Distribution zip and cleanup -->
+    <target name="dist" depends="dist-spark-standalone">
         <zip basedir="${dist}" destfile="Backbone.zip"/>
         <delete dir="${dist}"/>
     </target>

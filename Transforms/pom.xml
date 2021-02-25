@@ -6,12 +6,12 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
     <groupId>org.ohnlp.backbone.transforms</groupId>
-    <artifactId>Transforms</artifactId>
+    <artifactId>transforms</artifactId>
 
     <description>
         Provides various transformations that are commonly used throughout the OHNLP ecosystem

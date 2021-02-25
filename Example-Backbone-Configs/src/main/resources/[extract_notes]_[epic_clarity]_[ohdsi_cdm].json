@@ -9,7 +9,7 @@
         "url": "jdbc:sqlserver://your_jdbc_url_here",
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
-        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "password": "your_mssql_pwd",
         "query": "SELECT hsp.pat_id, note_meta.pat_enc_csn_id text.note_id, text.line, coalesce(note_meta.create_instant_dttm, text.contact_date) start_date, text.note_text FROM clarity.hno_note_text text JOIN clarity.hno_info note_meta ON text.note_id = note_meta.note_id JOIN clarity.pat_enc_hsp hsp ON text.pat_enc_csn_id = hsp.pat_enc_csn_id;"
       }
     },
@@ -28,7 +28,7 @@
         "url": "jdbc:sqlserver://your_jdbc_url_here",
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
-        "password": "ENC(jasypt_encrypted_mssql_password (refer to Backbone documentation on securing secrets))",
+        "password": "your_mssql_pwd",
         "query": "INSERT INTO CDM_SCHEMA.NOTE (note_id, person_id, visit_occurrence_id, note_datetime, note_type_concept_id, note_class_concept_id, note_text, encoding_concept_id, language_concept_id) VALUES (?, ?, ?, 44814645, 40798302, ?, 32678, 4180186);",
         "paramMappings": [
           "note_id",

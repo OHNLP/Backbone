@@ -6,11 +6,11 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
-    <artifactId>API</artifactId>
+    <artifactId>api</artifactId>
 
     <description>
         Application Programming Interface for OHNLP Backbone Components

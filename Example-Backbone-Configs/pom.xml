@@ -6,11 +6,11 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
-    <artifactId>Example-Backbone-Configs</artifactId>
+    <artifactId>example-backbone-configs</artifactId>
 
     <description>
         Contains example configurations for common ETL tasks likely to be used when using OHNLP software. Configuration

@@ -6,34 +6,11 @@
 
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
-        <artifactId>Backbone-Parent</artifactId>
-        <version>1.0.1</version>
+        <artifactId>backbone-parent</artifactId>
+        <version>1.0.2</version>
     </parent>
 
-    <artifactId>Core</artifactId>
-
-    <build>
-        <plugins>
-            <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
-            <plugin>
-                <groupId>com.github.sampov2</groupId>
-                <artifactId>onejar-maven-plugin</artifactId>
-                <version>1.4.6</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <filename>Backbone-Core.jar</filename>
-                            <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
-                            <attachToBuild>true</attachToBuild>
-                        </configuration>
-                        <goals>
-                            <goal>one-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <artifactId>core</artifactId>
 
     <pluginRepositories>
         <pluginRepository>
@@ -49,17 +26,17 @@
     <dependencies>
         <dependency>
             <groupId>org.ohnlp.backbone</groupId>
-            <artifactId>API</artifactId>
+            <artifactId>api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ohnlp.backbone.io</groupId>
-            <artifactId>IO</artifactId>
+            <artifactId>io</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ohnlp.backbone.transforms</groupId>
-            <artifactId>Transforms</artifactId>
+            <artifactId>transforms</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
@@ -70,11 +47,188 @@
             <version>${beam.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.beam</groupId>
-            <artifactId>beam-runners-direct-java</artifactId>
-            <version>${beam.version}</version>
-        </dependency>
     </dependencies>
+
+    <!-- Platform Specific Dependencies and Output Build Instructions -->
+    <profiles>
+        <!-- Beam Direct Runner/Debug -->
+        <profile>
+            <id>local-debug</id>
+            <build>
+                <plugins>
+                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+                    <plugin>
+                        <groupId>com.github.sampov2</groupId>
+                        <artifactId>onejar-maven-plugin</artifactId>
+                        <version>1.4.6</version>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <filename>Backbone-Core-LocalDebug.jar</filename>
+                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                                    <attachToBuild>true</attachToBuild>
+                                </configuration>
+                                <goals>
+                                    <goal>one-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-direct-java</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <!-- Google Cloud Platform Dataflow -->
+        <profile>
+            <id>gcp</id>
+            <build>
+                <plugins>
+                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+                    <plugin>
+                        <groupId>com.github.sampov2</groupId>
+                        <artifactId>onejar-maven-plugin</artifactId>
+                        <version>1.4.6</version>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <filename>Backbone-Core-GCP.jar</filename>
+                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                                    <attachToBuild>true</attachToBuild>
+                                </configuration>
+                                <goals>
+                                    <goal>one-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <!-- Spark -->
+        <profile>
+            <id>spark</id>
+            <build>
+                <plugins>
+                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+                    <plugin>
+                        <groupId>com.github.sampov2</groupId>
+                        <artifactId>onejar-maven-plugin</artifactId>
+                        <version>1.4.6</version>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <filename>Backbone-Core-Spark.jar</filename>
+                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                                    <attachToBuild>true</attachToBuild>
+                                </configuration>
+                                <goals>
+                                    <goal>one-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-spark</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <!-- Spark Stanadalone-->
+        <profile>
+            <id>spark-standalone</id>
+            <properties>
+                <spark.version>2.4.7</spark.version>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+                    <plugin>
+                        <groupId>com.github.sampov2</groupId>
+                        <artifactId>onejar-maven-plugin</artifactId>
+                        <version>1.4.6</version>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <filename>Backbone-Core-Spark-Standalone.jar</filename>
+                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                                    <attachToBuild>true</attachToBuild>
+                                </configuration>
+                                <goals>
+                                    <goal>one-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-spark</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-core_2.11</artifactId>
+                    <version>${spark.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-streaming_2.11</artifactId>
+                    <version>${spark.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <!-- Apache Flink -->
+        <profile>
+            <id>flink</id>
+            <build>
+                <plugins>
+                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+                    <plugin>
+                        <groupId>com.github.sampov2</groupId>
+                        <artifactId>onejar-maven-plugin</artifactId>
+                        <version>1.4.6</version>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <filename>Backbone-Core-Flink.jar</filename>
+                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
+                                    <attachToBuild>true</attachToBuild>
+                                </configuration>
+                                <goals>
+                                    <goal>one-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-flink-1.10</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>
