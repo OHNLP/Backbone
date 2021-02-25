@@ -1,8 +1,5 @@
 package org.ohnlp.backbone.pluginmanager;
 
-import org.apache.beam.repackaged.core.org.apache.commons.compress.utils.FileNameUtils;
-
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -18,7 +15,7 @@ public class PluginManager {
         File target = new File("bin/Backbone-Core-Packaged.jar");
         Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         install(target, modules, configs, resources);
-        JOptionPane.showMessageDialog(null, "Packaging complete! Final Packaged File: " + target.getAbsolutePath(), "Backbone Packaging Complete", JOptionPane.INFORMATION_MESSAGE);
+        System.out.println("Packaging complete! Final Packaged File: " + target.getAbsolutePath());
     }
 
     /**
