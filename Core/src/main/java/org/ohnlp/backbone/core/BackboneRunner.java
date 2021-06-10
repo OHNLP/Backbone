@@ -35,5 +35,8 @@ public class BackboneRunner {
         // - Load
         PDone complete = df.apply("Load-Step-" + i++, pipeline.load);
         p.run().waitUntilFinish();
+        // - Done
+        System.out.println("Pipeline complete");
+        System.exit(0);
     }
 }
