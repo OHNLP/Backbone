@@ -1,0 +1,13 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 http://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>codeforcode-http-unblocker</id>
+            <mirrorOf>com.github.sampov2.onejar-maven-plugin</mirrorOf>
+            <name>onejar-http-unblocker</name>
+            <url>http://maven.codeforcode.com/repository</url>
+            <blocked>false</blocked>
+        </mirror>
+    </mirrors>
+</settings>
