@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
         <artifactId>backbone-parent</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
 
     <groupId>org.ohnlp.backbone.io</groupId>
@@ -72,6 +72,12 @@
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <version>${mariadb.version}</version>
+        </dependency>
+        <!-- JDBC Connection Pooling -->
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5.4</version>
         </dependency>
 
     </dependencies>
