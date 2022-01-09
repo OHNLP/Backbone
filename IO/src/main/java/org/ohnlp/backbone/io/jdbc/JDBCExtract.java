@@ -104,7 +104,8 @@ public class JDBCExtract extends Extract {
             // Now we have to add the offset/fetch in the dialect local format..
             // Specifically, postgres and MySQL are special in that they do not conform to the
             // SQL:2011 standard syntax
-            if (driver.equals("org.postgresql.Driver") || driver.equals("com.mysql.jdbc.Driver")) {
+            if (driver.equals("org.postgresql.Driver") || driver.equals("com.mysql.jdbc.Driver")
+                || driver.equals("com.mysql.cj.jdbc.Driver")) {
                 this.orderedQuery += "LIMIT " + batchSize + " OFFSET ?";
             } else { // This is the SQL:2011 standard definition of an offset...fetch syntax
                 this.orderedQuery += "OFFSET ? ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
