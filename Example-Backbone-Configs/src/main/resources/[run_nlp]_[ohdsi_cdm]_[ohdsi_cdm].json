@@ -10,6 +10,8 @@
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
         "password": "your_mssql_pwd",
+        "batch_size": 100,
+        "identifier_col": "note_id",
         "query": "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE"
       }
     },
