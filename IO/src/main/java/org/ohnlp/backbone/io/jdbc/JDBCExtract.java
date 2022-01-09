@@ -87,8 +87,19 @@ public class JDBCExtract extends Extract {
                 int resultCount = rs.getInt(1);
                 this.numBatches = Math.round(Math.ceil((double)resultCount/this.batchSize));
             }
+            // Normally I would say use Strings.join for the below, but this was causing cross-jvm issues
+            // so we use the more portable stringbuilder instead...
+            StringBuilder sB = new StringBuilder();
+            boolean flag = false;
+            for (String s : this.orderByCols) {
+                if (flag) {
+                    sB.append(", ");
+                }
+                sB.append(s);
+                flag = true;
+            }
             this.orderedQuery = "SELECT * FROM (" + this.query + ") " + this.viewName
-                    + " ORDER BY " + Strings.join(this.orderByCols, ", ") + " ";
+                    + " ORDER BY " + sB.toString() + " ";
             // Now we have to add the offset/fetch in the dialect local format..
             // Specifically, postgres and MySQL are special in that they do not conform to the
             // SQL:2011 standard syntax
