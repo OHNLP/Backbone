@@ -110,7 +110,7 @@ public class JDBCExtract extends Extract {
                 // Assume we are using a case-sensitive impl:
                 // config mismatches can be addressed via config change for identifierCol but same is not true if
                 // impl is case-sensitive and we try to use a case-normalized column name via automatic selection
-                colNameToIndex.put(queryMeta.getColumnLabel(i), i);
+                colNameToIndex.put(queryMeta.getColumnLabel(i + 1), i + 1);
             }
             if (this.identifierCol != null) {
                 // User-supplied identifier column exists, make sure it actually exists in query results
@@ -128,7 +128,7 @@ public class JDBCExtract extends Extract {
                 // everything
                 List<String> colNames = new ArrayList<>();
                 for (int i = 0; i < queryMeta.getColumnCount(); i++) {
-                    colNames.add(queryMeta.getColumnLabel(i));
+                    colNames.add(queryMeta.getColumnLabel(i + 1));
                 }
                 return colNames.toArray(new String[0]);
             }
