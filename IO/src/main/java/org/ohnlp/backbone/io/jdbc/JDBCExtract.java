@@ -3,6 +3,7 @@ package org.ohnlp.backbone.io.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import jdk.internal.joptsimple.internal.Strings;
+import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.io.jdbc.SchemaUtilProxy;
 import org.apache.beam.sdk.schemas.Schema;
@@ -170,6 +171,7 @@ public class JDBCExtract extends Extract {
                         .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
                             preparedStatement.setInt(1, element); // Replace
                         })
+                        .withCoder(RowCoder.of(schema))
                 );
     }
 }
