@@ -8,7 +8,7 @@ SET GCP_PROJECT_ID=YOUR_GCP_PROJECT_ID
 SET GCP_REGION=YOUR_GOOGLE_CLOUD_REGION
 
 IF EXIST bin\Backbone-Core-GCP-Packaged.jar (
-    java -jar bin\Backbone-Core-GCP-Packaged.jar \
+    java -cp bin\Backbone-Core-GCP-Packaged.jar org.ohnlp.backbone.core.BackboneRunner\
     --config=%BACKBONE_CONFIG% \
     --runner=DataflowRunner \
     --project=%GCP_PROJECT_ID% \

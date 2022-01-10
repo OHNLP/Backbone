@@ -2,7 +2,7 @@ To run the pipeline on a spark cluster, do the following:
 
 1. Package your modules and configs by running package_modules_and_configs
 2. Upload bin\Backbone-Core-Spark-Packaged.jar file to a location accessible by spark-submit
-3. spark-submit --class com.simontuffs.onejar.Boot --master spark://HOST:PORT \
+3. spark-submit --class org.ohnlp.backbone.core.BackboneRunner --master spark://HOST:PORT \
         path/to/Backbone-Core-Spark-Packaged.jar --runner=SparkRunner --config=NAME_OF_CONFIG_TO_USE.json
    Note: This may change depending on how you perform the spark-submit (e.g. if you use Apache Livy), you may need to
    adapt the command accordingly. --runner and --config should be supplied as application arguments.

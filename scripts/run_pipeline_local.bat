@@ -7,7 +7,7 @@ cd %~dp0
 SET BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 
 IF EXIST bin\Backbone-Core-LocalDebug-Packaged.jar (
-    java -jar bin\Backbone-Core-LocalDebug-Packaged.jar --config=%BACKBONE_CONFIG%
+    java -cp bin\Backbone-Core-LocalDebug-Packaged.jar org.ohnlp.backbone.core.BackboneRunner --config=%BACKBONE_CONFIG%
 ) ELSE (
     ECHO Packaged backbone installation does not exist. Run package_modules_and_configs for your platform first!
 )

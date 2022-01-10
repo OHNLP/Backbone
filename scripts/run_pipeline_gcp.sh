@@ -12,7 +12,7 @@ cd $BACKBONEDIR
 
 BACKBONE_PACKAGED_FILE=bin/Backbone-Core-GCP-Packaged.jar
 if [ -f "$BACKBONE_PACKAGED_FILE" ]; then
-    java -jar bin\Backbone-Core-GCP-Packaged.jar \
+    java -cp bin\Backbone-Core-GCP-Packaged.jar org.ohnlp.backbone.core.BackboneRunner \
     --config=$BACKBONE_CONFIG \
     --runner=DataflowRunner \
     --project=$GCP_PROJECT_ID \
