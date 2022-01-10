@@ -8,6 +8,7 @@ BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 
 BACKBONEDIR=$(cd `dirname $0` && pwd)
 cd $BACKBONEDIR
+java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager
 
 BACKBONE_PACKAGED_FILE=bin/Backbone-Core-LocalDebug-Packaged.jar
 if [ -f "$BACKBONE_PACKAGED_FILE" ]; then

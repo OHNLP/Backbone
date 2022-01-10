@@ -9,7 +9,7 @@ GCP_REGION=YOUR_GOOGLE_CLOUD_REGION
 
 BACKBONEDIR=$(cd `dirname $0` && pwd)
 cd $BACKBONEDIR
-
+java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager
 BACKBONE_PACKAGED_FILE=bin/Backbone-Core-GCP-Packaged.jar
 if [ -f "$BACKBONE_PACKAGED_FILE" ]; then
     java -cp bin\Backbone-Core-GCP-Packaged.jar org.ohnlp.backbone.core.BackboneRunner \

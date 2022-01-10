@@ -6,7 +6,7 @@ cd %~dp0
 SET BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 SET GCP_PROJECT_ID=YOUR_GCP_PROJECT_ID
 SET GCP_REGION=YOUR_GOOGLE_CLOUD_REGION
-
+java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager
 IF EXIST bin\Backbone-Core-GCP-Packaged.jar (
     java -cp bin\Backbone-Core-GCP-Packaged.jar org.ohnlp.backbone.core.BackboneRunner\
     --config=%BACKBONE_CONFIG% \

@@ -6,6 +6,8 @@ cd %~dp0
 
 SET BACKBONE_CONFIG=NAME_OF_CONFIG_TO_USE.json
 
+java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager
+
 IF EXIST bin\Backbone-Core-LocalDebug-Packaged.jar (
     java -cp bin\Backbone-Core-LocalDebug-Packaged.jar org.ohnlp.backbone.core.BackboneRunner --config=%BACKBONE_CONFIG%
 ) ELSE (
