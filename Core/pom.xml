@@ -19,6 +19,41 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <properties>
+        <backbone.runner>Unspecified</backbone.runner>
+    </properties>
+    <build>
+        <plugins>
+            <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>Backbone-Core-${backbone.runner}</finalName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <description>
         Contains components supporting core backbone functionality and pipeline construction
     </description>
@@ -54,28 +89,9 @@
         <!-- Beam Direct Runner/Debug -->
         <profile>
             <id>local-debug</id>
-            <build>
-                <plugins>
-                    <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
-                    <plugin>
-                        <groupId>com.github.sampov2</groupId>
-                        <artifactId>onejar-maven-plugin</artifactId>
-                        <version>1.4.6</version>
-                        <executions>
-                            <execution>
-                                <configuration>
-                                    <filename>Backbone-Core-LocalDebug.jar</filename>
-                                    <mainClass>org.ohnlp.backbone.core.BackboneRunner</mainClass>
-                                    <attachToBuild>true</attachToBuild>
-                                </configuration>
-                                <goals>
-                                    <goal>one-jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <backbone.runner>LocalDebug</backbone.runner>
+            </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.beam</groupId>

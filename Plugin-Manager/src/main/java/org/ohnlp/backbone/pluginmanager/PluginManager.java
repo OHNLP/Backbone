@@ -3,6 +3,7 @@ package org.ohnlp.backbone.pluginmanager;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public class PluginManager {
@@ -38,13 +39,26 @@ public class PluginManager {
         env.put("create", "false");
         try (FileSystem fs = FileSystems.newFileSystem(target.toPath(), PluginManager.class.getClassLoader())) {
             for (File module : modules) {
-                Files.copy(module.toPath(), fs.getPath("/lib/" + module.getName()), StandardCopyOption.REPLACE_EXISTING);
+                try (FileSystem srcFs = FileSystems.newFileSystem(target.toPath(), PluginManager.class.getClassLoader())) {
+                    Path srcRoot = srcFs.getPath("/");
+                    Files.walkFileTree(srcRoot, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                            String fName = path.getFileName().toString().toLowerCase(Locale.ROOT);
+                            if (fName.endsWith(".sf") || fName.endsWith(".dsa") || fName.endsWith(".rsa")) {
+                                return FileVisitResult.CONTINUE;
+                            }
+                            Files.copy(path, fs.getPath(path.toString()), StandardCopyOption.REPLACE_EXISTING);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                }
             }
-            Files.createDirectory(fs.getPath("/configs"));
+            Files.createDirectories(fs.getPath("/configs"));
             for (File config : configurations) {
                 Files.copy(config.toPath(), fs.getPath("/configs/" + config.getName()), StandardCopyOption.REPLACE_EXISTING);
             }
-            Files.createDirectory(fs.getPath("/resources"));
+            Files.createDirectories(fs.getPath("/resources"));
             for (File resource : resources) {
                 String resourceDir = resource.getParentFile().toPath().toAbsolutePath().toString();
                 if (resource.isDirectory()) {
