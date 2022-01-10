@@ -39,7 +39,7 @@ public class PluginManager {
         env.put("create", "false");
         try (FileSystem fs = FileSystems.newFileSystem(target.toPath(), PluginManager.class.getClassLoader())) {
             for (File module : modules) {
-                try (FileSystem srcFs = FileSystems.newFileSystem(target.toPath(), PluginManager.class.getClassLoader())) {
+                try (FileSystem srcFs = FileSystems.newFileSystem(module.toPath(), PluginManager.class.getClassLoader())) {
                     Path srcRoot = srcFs.getPath("/");
                     Files.walkFileTree(srcRoot, new SimpleFileVisitor<Path>() {
                         @Override
@@ -48,7 +48,9 @@ public class PluginManager {
                             if (fName.endsWith(".sf") || fName.endsWith(".dsa") || fName.endsWith(".rsa")) {
                                 return FileVisitResult.CONTINUE;
                             }
-                            Files.copy(path, fs.getPath(path.toString()), StandardCopyOption.REPLACE_EXISTING);
+                            Path tgtPath = fs.getPath(path.toString());
+                            Files.createDirectories(tgtPath.getParent());
+                            Files.copy(path, tgtPath, StandardCopyOption.REPLACE_EXISTING);
                             return FileVisitResult.CONTINUE;
                         }
                     });
