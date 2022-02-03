@@ -1,0 +1,6 @@
+***Note:*** These instructions are for a managed flink cluster only (e.g. on AWS if not using Spark)
+For a local embedded flink run, use run_pipeline_local.sh (unix only) instead.
+
+1. Open flink web UI and upload jar after packaging
+2. Use org.ohnlp.backbone.core.BackboneRunner as execution class
+3. Use --runner=FlinkRUnner --config=YOUR_CONFIGURATION_NAME_HERE.json as your execution arguments

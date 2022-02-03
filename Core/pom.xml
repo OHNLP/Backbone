@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
         <artifactId>backbone-parent</artifactId>
-        <version>1.0.7</version>
+        <version>1.0.8</version>
     </parent>
 
     <artifactId>core</artifactId>
@@ -93,20 +93,6 @@
 
     <!-- Platform Specific Dependencies and Output Build Instructions -->
     <profiles>
-        <!-- Beam Direct Runner/Debug -->
-        <profile>
-            <id>local-debug</id>
-            <properties>
-                <backbone.runner>LocalDebug</backbone.runner>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.beam</groupId>
-                    <artifactId>beam-runners-direct-java</artifactId>
-                    <version>${beam.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
         <!-- Google Cloud Platform Dataflow -->
         <profile>
             <id>gcp</id>

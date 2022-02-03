@@ -75,19 +75,8 @@
         <copy file="Core/target/Backbone-Core-GCP.jar" tofile="${dist}/bin/Backbone-Core-GCP.jar"/>
     </target>
 
-    <!-- Generate Local Debug (Direct Runner) Distribution -->
-    <target name="exec-direct" description="compiles local debug components" depends="dist-gcp">
-        <antcall target="run-mvn-goals">
-            <param name="mvn_goals" value="clean install -P local-debug"/>
-        </antcall>
-    </target>
-
-    <target name="dist-direct" depends="exec-direct">
-        <copy file="Core/target/Backbone-Core-LocalDebug.jar" tofile="${dist}/bin/Backbone-Core-LocalDebug.jar"/>
-    </target>
-
     <!-- Generate Spark Distribution -->
-    <target name="exec-spark" description="compiles spark components" depends="dist-direct">
+    <target name="exec-spark" description="compiles spark components" depends="dist-gcp">
         <antcall target="run-mvn-goals">
             <param name="mvn_goals" value="clean install -P spark"/>
         </antcall>
