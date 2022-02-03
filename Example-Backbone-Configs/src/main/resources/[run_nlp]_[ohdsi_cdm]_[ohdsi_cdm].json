@@ -10,7 +10,7 @@
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
         "password": "your_mssql_pwd",
-        "batch_size": 100,
+        "batch_size": 5000,
         "identifier_col": "note_id",
         "query": "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE"
       }
@@ -18,11 +18,11 @@
     {
       "clazz": "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransform",
       "config": {
-        "_desc": "Runs NLP. In this case, we use COVID-19 ruleset that is bundled by default as an example",
+        "_desc": "Runs NLP. In this case, we use pasc ruleset that is bundled by default as an example",
         "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
         "input": "note_text",
-        "ruleset": "covid19",
-        "mode": "standalone"
+        "ruleset": "pasc",
+        "mode": "STANDALONE_DICT_AND_IE"
       }
     },
     {
@@ -30,7 +30,7 @@
       "config": {
         "_desc": "Converts MedTagger output to OHDSI format",
         "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
-        "ruleset": "covid19"
+        "ruleset": "NONE"
       }
     },
     {
