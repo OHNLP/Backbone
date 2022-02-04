@@ -5,10 +5,15 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PluginManager {
 
     public static void main(String... args) throws IOException {
+        Set<String> builds = new HashSet<>();
+        if (args.length > 0) {
+            builds = Arrays.stream(args).map(String::toLowerCase).collect(Collectors.toSet());
+        }
         List<File> modules = Arrays.asList(Objects.requireNonNull(new File("modules").listFiles()));
         List<File> configs = Arrays.asList(Objects.requireNonNull(new File("configs").listFiles()));
         List<File> resources = Arrays.asList(Objects.requireNonNull(new File("resources").listFiles()));
@@ -16,10 +21,13 @@ public class PluginManager {
             if (!f.isDirectory()) {
                 if (f.getName().startsWith("Backbone-Core") && !f.getName().endsWith("Packaged.jar")) {
                     File source = f;
-                    File target = new File("bin/" + f.getName().substring(0, f.getName().length() - 4) + "-Packaged.jar");
-                    Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    install(target, modules, configs, resources);
-                    System.out.println("Successfully Packaged Platform-Specific JAR: " + target.getAbsolutePath());
+                    String type = f.getName().substring(14, f.getName().length() - 4);
+                    if (builds.size() == 0 || builds.contains(type.toLowerCase(Locale.ROOT))) {
+                        File target = new File("bin/Backbone-Core-" + type + "-Packaged.jar");
+                        Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        install(target, modules, configs, resources);
+                        System.out.println("Successfully Packaged Platform-Specific JAR: " + target.getAbsolutePath());
+                    }
                 }
             }
         }
