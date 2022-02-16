@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
         <artifactId>backbone-parent</artifactId>
-        <version>1.0.11</version>
+        <version>1.0.12</version>
     </parent>
 
     <groupId>org.ohnlp.backbone.io</groupId>
@@ -80,6 +80,12 @@
             <version>0.9.5.4</version>
         </dependency>
 
+        <!-- Solr IO -->
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-solr</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
     </dependencies>
 
 </project>
