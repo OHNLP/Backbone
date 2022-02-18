@@ -21,6 +21,7 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
  *         "host": "solrHost",
  *         "user": "solrUser or NONE if no credentials needed",
  *         "password": "solrPass or NONE if no credentials needed",
+ *         "collection": "collection name",
  *         "query": "solr query to run",
  *         "doc_id_field": "field_name_for_document_id",
  *         "doc_text_field": "field_name_for_document_text"
@@ -36,6 +37,7 @@ public class SolrExtract extends Extract {
     private String query;
     private String docIdField;
     private String docTextField;
+    private String collection;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
@@ -45,6 +47,7 @@ public class SolrExtract extends Extract {
         this.query = config.get("query").asText();
         this.docIdField = config.get("doc_id_field").asText();
         this.docTextField = config.get("doc_text_field").asText();
+        this.collection = config.get("collection").asText();
     }
 
     @Override
@@ -59,7 +62,8 @@ public class SolrExtract extends Extract {
         return SolrIO
                 .read()
                 .withConnectionConfiguration(config)
-                .withQuery(query)
+                .withQuery(this.query)
+                .from(this.collection)
                 .expand(input)
                 .apply("Convert Solr Documents to Rows", ParDo.of(new DoFn<SolrDocument, Row>() {
                     @ProcessElement
