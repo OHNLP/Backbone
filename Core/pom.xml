@@ -12,13 +12,6 @@
 
     <artifactId>core</artifactId>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>com.github.sampov2.onejar-maven-plugin</id>
-            <url>http://maven.codeforcode.com/repository</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <properties>
         <backbone.runner>Unspecified</backbone.runner>
     </properties>
@@ -155,7 +148,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.beam</groupId>
-                    <artifactId>beam-runners-flink-1.10</artifactId>
+                    <artifactId>beam-runners-flink-1.13</artifactId>
                     <version>${beam.version}</version>
                 </dependency>
             </dependencies>

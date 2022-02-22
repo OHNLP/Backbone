@@ -2,13 +2,9 @@ package org.ohnlp.backbone.io.local;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.io.FileIO;
-import org.apache.beam.sdk.io.WriteFilesResult;
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
-import org.apache.beam.vendor.grpc.v1p26p0.com.google.common.base.Joiner;
 import org.apache.commons.text.StringEscapeUtils;
 import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
@@ -17,8 +13,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -68,7 +62,7 @@ public class FileSystemLoad extends Load {
                 writer.println(element.getSchema().getFieldNames().stream().map(StringEscapeUtils::escapeCsv).collect(Collectors.joining(",")));
                 wroteHeader = true;
             }
-            writer.println(Joiner.on(",").join(element.getValues().stream().map(o -> StringEscapeUtils.escapeCsv(o.toString())).collect(Collectors.toList())));
+            writer.println(element.getValues().stream().map(o -> StringEscapeUtils.escapeCsv(o.toString())).collect(Collectors.joining(",")));
         }
 
         public void flush() throws IOException {
