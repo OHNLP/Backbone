@@ -73,6 +73,7 @@ public class JDBCExtract extends Extract {
             ds.setPassword(password);
             this.datasourceConfig = JdbcIO.DataSourceConfiguration
                     .create(ds);
+            this.identifierCol = config.has("identifier_col") ? config.get("identifier_col").asText() : null;
             // We will first preflight with a query that counts the number of records so that we can get number
             // of batches
             String runId = UUID.randomUUID().toString().replaceAll("-", "_");
@@ -110,7 +111,6 @@ public class JDBCExtract extends Extract {
             } else { // This is the SQL:2011 standard definition of an offset...fetch syntax
                 this.orderedQuery += "OFFSET ? ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
             }
-            this.identifierCol = config.has("identifier_col") ? config.get("identifier_col").asText() : null;
         } catch (Throwable t) {
             throw new ComponentInitializationException(t);
         }
