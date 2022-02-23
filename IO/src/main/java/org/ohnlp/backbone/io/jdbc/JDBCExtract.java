@@ -110,6 +110,7 @@ public class JDBCExtract extends Extract {
             } else { // This is the SQL:2011 standard definition of an offset...fetch syntax
                 this.orderedQuery += "OFFSET ? ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
             }
+            this.identifierCol = config.has("identifier_col") ? config.get("identifier_col").asText() : null;
         } catch (Throwable t) {
             throw new ComponentInitializationException(t);
         }
