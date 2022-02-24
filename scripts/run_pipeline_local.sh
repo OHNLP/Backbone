@@ -10,15 +10,15 @@ cd $BACKBONEDIR
 echo "Repackaging Backbone with Current Configs, Modules, and Resources"
 java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager Flink
 
-FLINK_DIR=flink-1.14.3/bin
+FLINK_DIR=flink-1.13.6/bin
 FLINK_EXECUTABLE=$FLINK_DIR/flink
 if [ -f "$FLINK_EXECUTABLE" ]; then
     echo "Embedded Flink Cluster Already Setup - Skipping New Install"
 else
     echo "Downloading Apache Flink for Local Run -"
-    wget https://dlcdn.apache.org/flink/flink-1.14.3/flink-1.14.3-bin-scala_2.11.tgz -O flink.tgz
+    wget https://dlcdn.apache.org/flink/flink-1.13.6/flink-1.13.6-bin-scala_2.11.tgz -O flink.tgz
     tar -xf flink.tgz
-    echo "***Important***: Please adjust default flink settings located at flink-1.14.3/conf/flink-conf.yaml to match your hardware"
+    echo "***Important***: Please adjust default flink settings located at flink-1.13.6/conf/flink-conf.yaml to match your hardware"
   	echo "Particularly taskmanager.numberOfTaskSlots (generally number of cores available for use, good starting point is CPU * .8 rounded down), "
     echo "parallelism.default (set equal to number of task slots), "
   	echo "and taskmanager.memory.process.size (good start is 2GB * number of task slots)"
