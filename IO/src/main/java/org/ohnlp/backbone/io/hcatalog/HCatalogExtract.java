@@ -13,6 +13,17 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Extracts items from HCatalog (e.g. Hive) stores. <br/>
+ * Expected Configuration:
+ * <code>
+ *     {
+ *         "metastore_uris": "thrift://metastore-host:port",
+ *         "database": "source_database_name",
+ *         "table": "source_table_name"
+ *     }
+ * </code>
+ */
 public class HCatalogExtract extends Extract {
     Map<String, String> configProperties;
     private String database;
