@@ -98,6 +98,36 @@
                     <artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
                     <version>${beam.version}</version>
                 </dependency>
+                <!-- Note: this dependency is needed for every non-spark compile (where it is provided in runtime env)
+                 to prevent class not found errors -->
+                <dependency>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-common</artifactId>
+                    <version>2.10.1</version>
+                    <scope>compile</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.checkerframework</groupId>
+                            <artifactId>jdk8</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava-jdk5</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>jdk.tools</groupId>
+                            <artifactId>jdk.tools</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.protobuf</groupId>
+                            <artifactId>protobuf-lite</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.hamcrest</groupId>
+                            <artifactId>hamcrest-all</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
             </dependencies>
         </profile>
         <!-- Spark -->
@@ -137,6 +167,36 @@
                     <artifactId>spark-streaming_2.11</artifactId>
                     <version>${spark.version}</version>
                 </dependency>
+                <!-- Note: this dependency is needed for every non-spark compile (where it is provided in runtime env)
+                 to prevent class not found errors -->
+                <dependency>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-common</artifactId>
+                    <version>2.10.1</version>
+                    <scope>compile</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.checkerframework</groupId>
+                            <artifactId>jdk8</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava-jdk5</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>jdk.tools</groupId>
+                            <artifactId>jdk.tools</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.protobuf</groupId>
+                            <artifactId>protobuf-lite</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.hamcrest</groupId>
+                            <artifactId>hamcrest-all</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
             </dependencies>
         </profile>
         <!-- Apache Flink -->
@@ -150,6 +210,36 @@
                     <groupId>org.apache.beam</groupId>
                     <artifactId>beam-runners-flink-1.13</artifactId>
                     <version>${beam.version}</version>
+                </dependency>
+                <!-- Note: this dependency is needed for every non-spark compile (where it is provided in runtime env)
+                 to prevent class not found errors -->
+                <dependency>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-common</artifactId>
+                    <version>2.10.1</version>
+                    <scope>compile</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.checkerframework</groupId>
+                            <artifactId>jdk8</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava-jdk5</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>jdk.tools</groupId>
+                            <artifactId>jdk.tools</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.google.protobuf</groupId>
+                            <artifactId>protobuf-lite</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.hamcrest</groupId>
+                            <artifactId>hamcrest-all</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>

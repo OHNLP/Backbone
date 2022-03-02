@@ -87,12 +87,21 @@
             <version>${beam.version}</version>
         </dependency>
 
-        <!-- HCatalog IO -->
+        <!-- HDFS and HCatalog IO -->
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-hadoop-file-system</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-extensions-sql-hcatalog</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.beam</groupId>
             <artifactId>beam-sdks-java-io-hcatalog</artifactId>
             <version>${beam.version}</version>
         </dependency>
     </dependencies>
-
 </project>
