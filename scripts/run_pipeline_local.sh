@@ -55,7 +55,7 @@ if [ -f "$BACKBONE_PACKAGED_FILE" ]; then
     $FLINK_DIR/start-cluster.sh
     echo "Flink Cluster Started - Job Progress Can be Seen via Configured WebUI Port (Default: localhost:8081)"
     echo "Submitting Job..."
-    $FLINK_DIR/flink run -c org.ohnlp.backbone.core.BackboneRunner bin/Backbone-Core-Flink-Packaged.jar --runner=FlinkRUnner --config=$BACKBONE_CONFIG
+    $FLINK_DIR/flink run -c org.ohnlp.backbone.core.BackboneRunner bin/Backbone-Core-Flink-Packaged.jar --runner=FlinkRunner --streaming --config=$BACKBONE_CONFIG
     echo "Job Complete, Shutting Down Embedded Flink Cluster"
     $FLINK_DIR/stop-cluster.sh
 else
