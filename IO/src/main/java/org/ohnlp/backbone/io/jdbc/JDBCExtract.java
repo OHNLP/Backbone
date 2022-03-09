@@ -173,7 +173,7 @@ public class JDBCExtract extends Extract {
                             preparedStatement.setInt(1, element); // Replace
                         })
                         .withCoder(RowCoder.of(schema))
-                        .withOutputParallelization(true)
+                        .withOutputParallelization(false)
                 );
     }
 }
