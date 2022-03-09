@@ -18,7 +18,7 @@ import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 /**
- * Reads in records to a file system directory.
+ * Writes records to a file system directory.
  *
  * <b>Note:</b> This component is intended for debugging use in local mode only - no guarantees are made about
  * functionality in other environments
@@ -30,7 +30,7 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
  *     }
  * </pre>
  */
-public class FileSystemLoad extends Load {
+public class JSONLoad extends Load {
 
   private String filenamePrefix;
   private int maxOutputPartitionMinutes;
