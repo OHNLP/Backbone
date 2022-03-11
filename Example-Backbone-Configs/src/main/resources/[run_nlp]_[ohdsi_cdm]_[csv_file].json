@@ -34,11 +34,12 @@
       }
     },
     {
-      "clazz": "org.ohnlp.backbone.io.local.JSONLLoad",
+      "clazz": "org.ohnlp.backbone.io.local.CSVLoad",
       "config": {
-        "_desc": "Writes MedTagger output to file with JSON objects separated by newlines (JSONL)",
+        "_desc": "Writes MedTagger output to file as a CSV",
         "_desc_ctd": "Not guaranteed to function on all platforms",
         "fileSystemPath": "path/to/output/dir/to/write/records",
+        "writeHeader": true,
         "fields": [
           "note_id",
           "section_concept_id",

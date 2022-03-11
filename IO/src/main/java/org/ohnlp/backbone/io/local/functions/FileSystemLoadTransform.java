@@ -8,15 +8,15 @@ import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
-import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
-import org.joda.time.Duration;
 import org.ohnlp.backbone.io.local.encodings.RowToTextEncoding;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class FileSystemLoadTransform extends PTransform<PCollection<Row>, PDone> {
@@ -25,14 +25,20 @@ public class FileSystemLoadTransform extends PTransform<PCollection<Row>, PDone>
     private final String ext;
     private final RowToTextEncoding headerEncoding;
     private final RowToTextEncoding contentEncoding;
+    private final List<String> fields;
 
     private transient boolean wroteHeader;
 
     public FileSystemLoadTransform(String outputDir, String ext, RowToTextEncoding headerEncoding, RowToTextEncoding contentEncoding) {
+        this(outputDir, ext, headerEncoding, contentEncoding, Collections.emptyList());
+    }
+
+    public FileSystemLoadTransform(String outputDir, String ext, RowToTextEncoding headerEncoding, RowToTextEncoding contentEncoding, List<String> fields) {
         this.outputDir = outputDir;
         this.ext = ext;
         this.headerEncoding = headerEncoding;
         this.contentEncoding = contentEncoding;
+        this.fields = fields;
     }
 
     @Override
@@ -51,10 +57,10 @@ public class FileSystemLoadTransform extends PTransform<PCollection<Row>, PDone>
             @ProcessElement
             public void processElement(@Element Row input, OutputReceiver<Void> output) {
                 if (!wroteHeader && headerEncoding != null) {
-                    writeRecord(headerEncoding.toText(input));
+                    writeRecord(headerEncoding.toText(input, fields));
                     wroteHeader = true;
                 }
-                writeRecord(contentEncoding.toText(input));
+                writeRecord(contentEncoding.toText(input, fields));
             }
 
             private void writeRecord(String text) {

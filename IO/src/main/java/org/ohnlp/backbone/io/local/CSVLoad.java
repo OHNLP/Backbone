@@ -12,6 +12,9 @@ import org.ohnlp.backbone.io.local.encodings.RowHeaderToCSVEncoding;
 import org.ohnlp.backbone.io.local.encodings.RowValueToCSVEncoding;
 import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Writes records to a file system directory in CSV format
@@ -23,18 +26,26 @@ import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
  * <pre>
  *     {
  *         "fileSystemPath": "path/to/output/dir/to/write/records",
- *         "writeHeader": true|false
+ *         "writeHeader": true|false,
+ *         "fields": ["optional", "array", "of", "fields", "to", "include", "defaults", "all"]
  *     }
  * </pre>
  */
 public class CSVLoad extends Load {
     private String workingDir;
     private boolean writeHeader;
+    private List<String> fields;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
         this.workingDir = config.get("fileSystemPath").asText();
         this.writeHeader = config.get("writeHeader").asBoolean(true);
+        this.fields = new ArrayList<>();
+        if (config.has("fields")) {
+            for (JsonNode field : config.get("fields")) {
+                fields.add(field.asText());
+            }
+        }
     }
 
     @Override
@@ -43,6 +54,8 @@ public class CSVLoad extends Load {
                 workingDir,
                 ".csv",
                 this.writeHeader ? new RowHeaderToCSVEncoding() : null,
-                new RowValueToCSVEncoding()).expand(input);
+                new RowValueToCSVEncoding(),
+                fields
+        ).expand(input);
     }
 }
