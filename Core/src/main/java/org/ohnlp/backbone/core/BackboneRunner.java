@@ -2,14 +2,12 @@ package org.ohnlp.backbone.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.Pipeline;
-import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
-import org.ohnlp.backbone.core.coders.NoteNLPSchema;
 import org.ohnlp.backbone.core.coders.RowToByteArrCoder;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 
@@ -34,7 +32,6 @@ public class BackboneRunner {
             df = df.apply("Transform-Step-" + i++, t).setCoder(new RowToByteArrCoder());
         }
         // - Load
-        df.setRowSchema(NoteNLPSchema.getSchema());
         PDone complete = df.apply("Load-Step-" + i++, pipeline.load);
         p.run().waitUntilFinish();
         // - Done
