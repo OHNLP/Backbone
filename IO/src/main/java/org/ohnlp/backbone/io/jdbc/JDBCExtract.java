@@ -70,6 +70,7 @@ public class JDBCExtract extends Extract {
             ds.setJdbcUrl(url);
             ds.setUser(user);
             ds.setPassword(password);
+            ds.setMaxIdleTime(config.has("idleTimeout") ? config.get("idleTimeout").asInt() : 0);
             this.datasourceConfig = JdbcIO.DataSourceConfiguration
                     .create(ds);
             this.identifierCol = config.has("identifier_col") ? config.get("identifier_col").asText() : null;

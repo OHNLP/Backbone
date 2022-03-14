@@ -1,6 +1,7 @@
 package org.ohnlp.backbone.io.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
@@ -56,10 +57,13 @@ public class JDBCLoad extends Load {
                 mappingOps.add(new RowToPSMappingFunction(i, child.asText()));
                 i++;
             }
-            JdbcIO.DataSourceConfiguration datasourceConfig = JdbcIO.DataSourceConfiguration
-                    .create(driver, url)
-                    .withUsername(user)
-                    .withPassword(password);
+            ComboPooledDataSource ds = new ComboPooledDataSource();
+            ds.setDriverClass(driver);
+            ds.setJdbcUrl(url);
+            ds.setUser(user);
+            ds.setPassword(password);
+            ds.setMaxIdleTime(config.has("idleTimeout") ? config.get("idleTimeout").asInt() : 0);
+            JdbcIO.DataSourceConfiguration datasourceConfig = JdbcIO.DataSourceConfiguration.create(ds);
             this.runnableInstance = JdbcIO.<Row>write()
                     .withDataSourceConfiguration(datasourceConfig)
                     .withStatement(query)
