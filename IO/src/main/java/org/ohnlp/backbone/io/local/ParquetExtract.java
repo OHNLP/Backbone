@@ -45,7 +45,7 @@ public class ParquetExtract extends Extract {
                 .fields();
         config.get("schema").fields().forEachRemaining((e) -> {
             String field = e.getKey();
-            avroSchemaBuilder.name(field).type(e.getValue().asText().toUpperCase(Locale.ROOT)).noDefault();
+            avroSchemaBuilder.name(field).type(e.getValue().asText()).noDefault();
         });
         schema = avroSchemaBuilder.endRecord();
 
