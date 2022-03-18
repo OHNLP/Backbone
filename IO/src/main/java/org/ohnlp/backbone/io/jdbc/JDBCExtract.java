@@ -32,6 +32,7 @@ public class JDBCExtract extends Extract {
     private String[] orderByCols;
     private String viewName;
     private String orderedQuery;
+    private String driver;
 
     /**
      * Initializes a Beam JdbcIO Provider
@@ -60,7 +61,7 @@ public class JDBCExtract extends Extract {
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
         try {
             String url = config.get("url").asText();
-            String driver = config.get("driver").asText();
+            this.driver = config.get("driver").asText();
             String user = config.get("user").asText();
             String password = config.get("password").asText();
             this.query = config.get("query").asText();
@@ -160,7 +161,7 @@ public class JDBCExtract extends Extract {
         Schema schema;
         try (Connection conn = ds.getConnection();
                 PreparedStatement ps = conn.prepareStatement(this.query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-            schema = SchemaUtilProxy.toBeamSchema(ps.getMetaData());
+            schema = SchemaUtilProxy.toBeamSchema(driver, ps.getMetaData());
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables);
         }
@@ -169,7 +170,9 @@ public class JDBCExtract extends Extract {
                         JdbcIO.<Integer, Row>readAll()
                                 .withDataSourceConfiguration(datasourceConfig)
                                 .withQuery(this.orderedQuery)
-                        .withRowMapper(new SchemaUtilProxy.BeamRowMapperProxy(schema))
+                        .withRowMapper(this.driver.equals("org.sqlite.JDBC") ?
+                                new SchemaUtilProxy.SQLiteBeamRowMapperProxy(schema) :
+                                new SchemaUtilProxy.BeamRowMapperProxy(schema))
                         .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
                             preparedStatement.setInt(1, element); // Replace
                         })
