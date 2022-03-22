@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
 import org.apache.beam.sdk.schemas.utils.AvroUtils;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -34,7 +35,7 @@ import java.util.Locale;
  */
 public class ParquetExtract extends Extract {
     private String dir;
-    private Schema schema;
+    private transient Schema schema;
     private org.apache.beam.sdk.schemas.Schema beamSchema;
 
     @Override
@@ -55,12 +56,24 @@ public class ParquetExtract extends Extract {
     @Override
     public PCollection<Row> expand(PBegin input) {
         return input
-                .apply("Parquet Read", ParquetIO.read(this.schema).from(this.dir))
-                .apply("Convert to Beam Row", ParDo.of(new DoFn<GenericRecord, Row>() {
-                    @ProcessElement
-                    public void processElement(@Element GenericRecord input, OutputReceiver<Row> output) {
-                        output.output(AvroUtils.toBeamRowStrict(input, beamSchema));
-                    }
-                }));
+                .apply("Parquet Read", ParquetIO
+                        .read(this.schema)
+                        .from(this.dir))
+                .setCoder(AvroCoder.of(GenericRecord.class, schema))
+                .apply("Convert to Beam Row", ParDo.of(new AvroToBeam(beamSchema)));
+    }
+
+    private class AvroToBeam extends DoFn<GenericRecord, Row> {
+
+        private org.apache.beam.sdk.schemas.Schema beamSchema;
+
+        public AvroToBeam(org.apache.beam.sdk.schemas.Schema beamSchema) {
+            this.beamSchema = beamSchema;
+        }
+
+        @ProcessElement
+        public void processElement(@Element GenericRecord input, OutputReceiver<Row> output) {
+            output.output(AvroUtils.toBeamRowStrict(input, beamSchema));
+        }
     }
 }
