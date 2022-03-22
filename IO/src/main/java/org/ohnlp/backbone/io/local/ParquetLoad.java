@@ -45,6 +45,7 @@ public class ParquetLoad extends Load {
 
     }
 
+
     @Override
     public PDone expand(PCollection<Row> input) {
         input.apply("Subselect Columns and Convert to Avro Format", ParDo.of(new DoFn<Row, GenericRecord>() {

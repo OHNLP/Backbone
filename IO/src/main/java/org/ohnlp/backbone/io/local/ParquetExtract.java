@@ -35,6 +35,7 @@ import java.util.Locale;
 public class ParquetExtract extends Extract {
     private String dir;
     private Schema schema;
+    private org.apache.beam.sdk.schemas.Schema beamSchema;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
@@ -48,7 +49,7 @@ public class ParquetExtract extends Extract {
             avroSchemaBuilder.name(field).type(e.getValue().asText()).noDefault();
         });
         schema = avroSchemaBuilder.endRecord();
-
+        beamSchema = AvroUtils.toBeamSchema(schema);
     }
 
     @Override
@@ -58,7 +59,7 @@ public class ParquetExtract extends Extract {
                 .apply("Convert to Beam Row", ParDo.of(new DoFn<GenericRecord, Row>() {
                     @ProcessElement
                     public void processElement(@Element GenericRecord input, OutputReceiver<Row> output) {
-                        output.output(AvroUtils.toBeamRowStrict(input, AvroUtils.toBeamSchema(schema)));
+                        output.output(AvroUtils.toBeamRowStrict(input, beamSchema));
                     }
                 }));
     }
