@@ -21,7 +21,7 @@ import java.util.Locale;
  *
  * Expected Configuration:
  * {
- *     "fileSystemPath": "path/to/write/to",
+ *     "fileSystemPath": "path/to/read/from/*",
  *     "recordName": "Schema Record Name",
  *     "recordNamespace": "Schema Record Namespace",
  *     "schema": {

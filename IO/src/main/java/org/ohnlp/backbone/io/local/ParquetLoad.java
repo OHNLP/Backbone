@@ -48,29 +48,16 @@ public class ParquetLoad extends Load {
 
     @Override
     public PDone expand(PCollection<Row> input) {
+        beamSchema = input.getSchema();
         input.apply("Subselect Columns and Convert to Avro Format", ParDo.of(new DoFn<Row, GenericRecord>() {
                     @ProcessElement
                     public void processElement(@Element Row input, OutputReceiver<GenericRecord> output) {
-                        if (beamSchema == null) {
-                            // Assume homogeneous schema
-                            Schema sourceSchema = input.getSchema();
-                            if (!fields.isEmpty()) {
-                                Schema.Builder targetBeamSchemaBuilder = org.apache.beam.sdk.schemas.Schema.builder();
-                                for (String f : fields) {
-                                    targetBeamSchemaBuilder.addField(f, sourceSchema.getField(f).getType());
-                                }
-                                beamSchema = targetBeamSchemaBuilder.build();
-                            } else {
-                                beamSchema = sourceSchema;
-                            }
-                            avroSchema = AvroUtils.toAvroSchema(beamSchema);
-                        }
                         output.output(AvroUtils.toGenericRecord(input, avroSchema));
                     }
                 }))
                 .apply("Write to Filesystem", FileIO
                         .<GenericRecord>write()
-                        .via(ParquetIO.sink(avroSchema))
+                        .via(ParquetIO.sink(AvroUtils.toAvroSchema(beamSchema)))
                         .to(this.dir)
                 );
         return PDone.in(input.getPipeline());
