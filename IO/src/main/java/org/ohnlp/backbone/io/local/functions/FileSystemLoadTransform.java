@@ -14,6 +14,7 @@ import org.ohnlp.backbone.io.local.encodings.RowToTextEncoding;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +51,7 @@ public class FileSystemLoadTransform extends PTransform<PCollection<Row>, PDone>
             public void init() throws IOException {
                 ResourceId outputResource = FileSystems.matchNewResource(outputDir, true);
                 ResourceId outputFileResource = outputResource.resolve("part-" + UUID.randomUUID() + ext, ResolveOptions.StandardResolveOptions.RESOLVE_FILE);
-                this.writer = Channels.newWriter(FileSystems.create(outputFileResource, "application/octet-stream"), StandardCharsets.UTF_8);
+                this.writer = Channels.newWriter(FileSystems.create(outputFileResource, "application/octet-stream"), "UTF-8");
                 wroteHeader = false;
             }
 
