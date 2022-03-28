@@ -41,7 +41,7 @@
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
         "user": "your_mssql_username",
         "password": "your_mssql_pwd",
-        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
+        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers, offset, nlp_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
         "paramMappings": [
           "note_id",
           "section_concept_id",
@@ -50,7 +50,9 @@
           "note_nlp_concept_id",
           "note_nlp_source_concept_id",
           "nlp_datetime",
-          "term_modifiers"
+          "term_modifiers",
+          "offset",
+          "nlp_system"
         ]
       }
     }
