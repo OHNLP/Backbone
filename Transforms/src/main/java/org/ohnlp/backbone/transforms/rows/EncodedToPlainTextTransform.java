@@ -85,7 +85,7 @@ public class EncodedToPlainTextTransform extends Transform {
         @Setup
         public void init() {
             this.parser = new AutoDetectParser();
-            this.handler = new BodyContentHandler();
+            this.handler = new BodyContentHandler(-1);
             this.metadata = new Metadata();
         }
 
