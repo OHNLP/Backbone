@@ -2,6 +2,8 @@ package org.ohnlp.backbone.io.mongodb;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.beam.sdk.io.mongodb.AggregationQuery;
+import org.apache.beam.sdk.io.mongodb.FindQuery;
 import org.apache.beam.sdk.io.mongodb.MongoDbIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -9,6 +11,8 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
@@ -32,7 +36,8 @@ import java.util.stream.Collectors;
  *             "complex_field1": {
  *                 "field3": "TYPE",
  *                 "field4": "TYPE"
- *             }
+ *             },
+ *             "aggregate_pipeline": ["{}", "{}"] // Your MongoDB query function pipeline as a list of JSON-escaped strings
  *         }
  *     }
  * </pre>
@@ -51,6 +56,7 @@ public class MongoDBExtract extends Extract {
     private String collection;
     private Schema schema;
     private ArrayList<SchemaDefinition> mappings;
+    private List<String> filter;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
@@ -58,6 +64,12 @@ public class MongoDBExtract extends Extract {
         this.database = config.get("database").asText();
         this.collection = config.get("collection").asText();
         initSchema(config.get("schema"));
+        this.filter = new ArrayList<>();
+        if (config.has("aggregate_pipeline")) {
+            config.get("aggregate_pipeline").forEach(str -> {
+                this.filter.add(str.asText());
+            });
+        }
     }
 
     private void initSchema(JsonNode schema) {
@@ -88,10 +100,18 @@ public class MongoDBExtract extends Extract {
 
     @Override
     public PCollection<Row> expand(PBegin input) {
-        return input.apply("MongoDB Read", MongoDbIO.read()
-                        .withUri(this.uri)
-                        .withDatabase(this.database)
-                        .withCollection(this.collection))
+        MongoDbIO.Read readFn = MongoDbIO.read()
+                .withUri(this.uri)
+                .withDatabase(this.database)
+                .withCollection(this.collection);
+        if (this.filter.size() > 0) {
+            readFn = readFn.withQueryFn(AggregationQuery
+                    .create()
+                    .withMongoDbPipeline(
+                            this.filter.stream().map(BsonDocument::parse)
+                                    .collect(Collectors.toCollection(ArrayList::new))));
+        }
+        return input.apply("MongoDB Read", readFn)
                 .apply("Convert MongoDB Document to Row", ParDo.of(new DoFn<Document, Row>() {
                     @ProcessElement
                     public void processElement(@Element Document input, OutputReceiver<Row> out) {
