@@ -13,6 +13,7 @@ import org.bson.Document;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,14 +44,13 @@ import java.util.stream.Collectors;
  * <br/>
  * Note that embedded object will be flattened in the output row structure, e.g. values located under field3 can be
  * referred to using "complex_field1.field3" further on down the pipeline
- *
  */
 public class MongoDBExtract extends Extract {
     private String uri;
     private String database;
     private String collection;
     private Schema schema;
-    private ArrayList<Map.Entry<List<String>, PrimitiveType>> mappings;
+    private ArrayList<SchemaDefinition> mappings;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
@@ -64,10 +64,10 @@ public class MongoDBExtract extends Extract {
         LinkedList<String> pathQue = new LinkedList<>();
         Map<List<String>, PrimitiveType> mappings = new HashMap<>(); // TODO implement more complex types (e.g. embedded objects and arrays)
         parseSchema(schema, pathQue, mappings);
-        this.mappings = new ArrayList<>(mappings.entrySet()); // Use list to ensure consistant iteration order between mapping/schema
+        this.mappings = mappings.entrySet().stream().map(e -> new SchemaDefinition(e.getKey(), e.getValue())).collect(Collectors.toCollection(ArrayList::new)); // Use list to ensure consistant iteration order between mapping/schema
         Schema.Builder schemaBuilder = Schema.builder();
         this.mappings.forEach(e -> {
-            schemaBuilder.addField(Schema.Field.of(String.join(".", e.getKey()), e.getValue().beamType));
+            schemaBuilder.addField(Schema.Field.of(String.join(".", e.getKey()), e.getType().beamType));
         });
         this.schema = schemaBuilder.build();
     }
@@ -98,33 +98,33 @@ public class MongoDBExtract extends Extract {
                         List<Object> vals = new ArrayList<>();
                         mappings.forEach(e -> {
                             LinkedList<String> path = new LinkedList<>(e.getKey());
-                            PrimitiveType type = e.getValue();
+                            PrimitiveType type = e.getType();
                             Object curr = input;
                             String fieldName = path.removeFirst();
                             while (!path.isEmpty()) {
-                                curr = ((Document)curr).get(fieldName);
+                                curr = ((Document) curr).get(fieldName);
                             }
                             switch (type) {
                                 case BOOLEAN:
-                                    vals.add(((Document)curr).getBoolean(fieldName));
+                                    vals.add(((Document) curr).getBoolean(fieldName));
                                     break;
                                 case DATE:
-                                    vals.add(((Document)curr).getDate(fieldName));
+                                    vals.add(((Document) curr).getDate(fieldName));
                                     break;
                                 case DOUBLE:
-                                    vals.add(((Document)curr).getDouble(fieldName));
+                                    vals.add(((Document) curr).getDouble(fieldName));
                                     break;
                                 case INTEGER:
-                                    vals.add(((Document)curr).getInteger(fieldName));
+                                    vals.add(((Document) curr).getInteger(fieldName));
                                     break;
                                 case LONG:
-                                    vals.add(((Document)curr).getLong(fieldName));
+                                    vals.add(((Document) curr).getLong(fieldName));
                                     break;
                                 case STRING:
-                                    vals.add(((Document)curr).getString(fieldName));
+                                    vals.add(((Document) curr).getString(fieldName));
                                     break;
                                 case OBJECT_ID:
-                                    vals.add(((Document)curr).getObjectId(fieldName).toHexString());
+                                    vals.add(((Document) curr).getObjectId(fieldName).toHexString());
                                     break;
                             }
                         });
@@ -149,5 +149,33 @@ public class MongoDBExtract extends Extract {
         }
     }
 
+    public class SchemaDefinition implements Serializable {
+        private List<String> key;
+        private PrimitiveType type;
+
+        public SchemaDefinition() {
+        }
+
+        public SchemaDefinition(List<String> key, PrimitiveType type) {
+            this.key = key;
+            this.type = type;
+        }
+
+        public List<String> getKey() {
+            return key;
+        }
+
+        public void setKey(List<String> key) {
+            this.key = key;
+        }
+
+        public PrimitiveType getType() {
+            return type;
+        }
+
+        public void setType(PrimitiveType type) {
+            this.type = type;
+        }
+    }
 
 }
