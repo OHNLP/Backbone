@@ -14,6 +14,7 @@ import org.apache.beam.sdk.values.Row;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.Document;
+import org.joda.time.DateTime;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
@@ -129,7 +130,7 @@ public class MongoDBExtract extends Extract {
                                     vals.add(((Document) curr).getBoolean(fieldName));
                                     break;
                                 case DATE:
-                                    vals.add(((Document) curr).getDate(fieldName));
+                                    vals.add(new DateTime(((Document) curr).getDate(fieldName)));
                                     break;
                                 case DOUBLE:
                                     vals.add(((Document) curr).getDouble(fieldName));
