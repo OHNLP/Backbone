@@ -44,7 +44,7 @@ public class BigQueryExtract extends Extract {
 
     @Override
     public PCollection<Row> expand(PBegin input) {
-        return input.apply("Read From BigQuery", BigQueryIO.readTableRowsWithSchema().fromQuery(this.query))
+        return input.apply("Read From BigQuery", BigQueryIO.readTableRows().fromQuery(this.query))
                 .apply("Convert BigQuery TableRows to Beam Rows", ParDo.of(
                         new DoFn<TableRow, Row>() {
                             @ProcessElement
