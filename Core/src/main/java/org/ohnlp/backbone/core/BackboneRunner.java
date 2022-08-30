@@ -5,6 +5,7 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
+import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
@@ -32,7 +33,7 @@ public class BackboneRunner {
             df = df.apply("Transform-Step-" + i++, t).setCoder(new RowToByteArrCoder());
         }
         // - Load
-        PDone complete = df.apply("Load-Step-" + i++, pipeline.load);
+        POutput complete = df.apply("Load-Step-" + i++, pipeline.load);
         p.run().waitUntilFinish();
         // - Done
         System.out.println("Pipeline complete");

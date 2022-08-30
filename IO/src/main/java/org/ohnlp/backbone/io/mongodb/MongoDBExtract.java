@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
  *                 "field3": "TYPE",
  *                 "field4": "TYPE"
  *             },
- *             "aggregate_pipeline": ["{}", "{}"] // Your MongoDB query function pipeline as a list of JSON-escaped strings
- *         }
+ *         },
+ *         "aggregate_pipeline": ["{}", "{}"] // Your MongoDB query function pipeline as a list of JSON-escaped strings
  *     }
  * </pre>
  * <p>
