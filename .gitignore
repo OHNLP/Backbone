@@ -1,6 +1,6 @@
 ### Eclipse ###
 .metadata
-!/lib/*.jar
+bin/
 tmp/
 *.tmp
 *.bak
