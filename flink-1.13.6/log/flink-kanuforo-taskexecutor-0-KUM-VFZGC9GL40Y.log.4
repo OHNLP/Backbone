@@ -1,0 +1,137 @@
+2022-08-19 14:50:31,838 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - --------------------------------------------------------------------------------
+2022-08-19 14:50:31,840 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Preconfiguration: 
+2022-08-19 14:50:31,840 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - 
+
+
+RESOURCE_PARAMS extraction logs:
+jvm_params: -Xmx536870902 -Xms536870902 -XX:MaxDirectMemorySize=268435458 -XX:MaxMetaspaceSize=268435456
+dynamic_configs: -D taskmanager.memory.network.min=134217730b -D taskmanager.cpu.cores=1.0 -D taskmanager.memory.task.off-heap.size=0b -D taskmanager.memory.jvm-metaspace.size=268435456b -D external-resources=none -D taskmanager.memory.jvm-overhead.min=201326592b -D taskmanager.memory.framework.off-heap.size=134217728b -D taskmanager.memory.network.max=134217730b -D taskmanager.memory.framework.heap.size=134217728b -D taskmanager.memory.managed.size=536870920b -D taskmanager.memory.task.heap.size=402653174b -D taskmanager.numberOfTaskSlots=1 -D taskmanager.memory.jvm-overhead.max=201326592b
+logs: WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+INFO  [] - Loading configuration property: jobmanager.rpc.address, localhost
+INFO  [] - Loading configuration property: jobmanager.rpc.port, 6123
+INFO  [] - Loading configuration property: jobmanager.memory.process.size, 1600m
+INFO  [] - Loading configuration property: taskmanager.memory.process.size, 1728m
+INFO  [] - Loading configuration property: taskmanager.numberOfTaskSlots, 1
+INFO  [] - Loading configuration property: parallelism.default, 1
+INFO  [] - Loading configuration property: jobmanager.execution.failover-strategy, region
+INFO  [] - Loading configuration property: jobmanager.web.port, 8085
+INFO  [] - The derived from fraction jvm overhead memory (172.800mb (181193935 bytes)) is less than its min value 192.000mb (201326592 bytes), min value will be used instead
+INFO  [] - Final TaskExecutor Memory configuration:
+INFO  [] -   Total Process Memory:          1.688gb (1811939328 bytes)
+INFO  [] -     Total Flink Memory:          1.250gb (1342177280 bytes)
+INFO  [] -       Total JVM Heap Memory:     512.000mb (536870902 bytes)
+INFO  [] -         Framework:               128.000mb (134217728 bytes)
+INFO  [] -         Task:                    384.000mb (402653174 bytes)
+INFO  [] -       Total Off-heap Memory:     768.000mb (805306378 bytes)
+INFO  [] -         Managed:                 512.000mb (536870920 bytes)
+INFO  [] -         Total JVM Direct Memory: 256.000mb (268435458 bytes)
+INFO  [] -           Framework:             128.000mb (134217728 bytes)
+INFO  [] -           Task:                  0 bytes
+INFO  [] -           Network:               128.000mb (134217730 bytes)
+INFO  [] -     JVM Metaspace:               256.000mb (268435456 bytes)
+INFO  [] -     JVM Overhead:                192.000mb (201326592 bytes)
+
+2022-08-19 14:50:31,840 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - --------------------------------------------------------------------------------
+2022-08-19 14:50:31,840 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Starting TaskManager (Version: 1.13.6, Scala: 2.11, Rev:b2ca390, Date:2022-02-03T14:54:22+01:00)
+2022-08-19 14:50:31,840 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  OS current user: kanuforo
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Current Hadoop/Kerberos user: <no hadoop dependency found>
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  JVM: OpenJDK 64-Bit Server VM - Homebrew - 11/11.0.16.1+0
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Maximum heap size: 512 MiBytes
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  JAVA_HOME: /usr/local/Cellar/openjdk@11/11.0.16.1/libexec/openjdk.jdk/Contents/Home
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  No Hadoop Dependency available
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  JVM Options:
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -XX:+UseG1GC
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Xmx536870902
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Xms536870902
+2022-08-19 14:50:31,841 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -XX:MaxDirectMemorySize=268435458
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -XX:MaxMetaspaceSize=268435456
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Dlog.file=/Users/kanuforo/flink-1.13.6/log/flink-kanuforo-taskexecutor-0-KUM-VFZGC9GL40Y.log
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Dlog4j.configuration=file:/Users/kanuforo/flink-1.13.6/conf/log4j.properties
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Dlog4j.configurationFile=file:/Users/kanuforo/flink-1.13.6/conf/log4j.properties
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -Dlogback.configurationFile=file:/Users/kanuforo/flink-1.13.6/conf/logback.xml
+2022-08-19 14:50:31,842 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Program Arguments:
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     --configDir
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     /Users/kanuforo/flink-1.13.6/conf
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.network.min=134217730b
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.cpu.cores=1.0
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,843 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.task.off-heap.size=0b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.jvm-metaspace.size=268435456b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     external-resources=none
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.jvm-overhead.min=201326592b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.framework.off-heap.size=134217728b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.network.max=134217730b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.framework.heap.size=134217728b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.managed.size=536870920b
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,844 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.task.heap.size=402653174b
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.numberOfTaskSlots=1
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     -D
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -     taskmanager.memory.jvm-overhead.max=201326592b
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] -  Classpath: /Users/kanuforo/flink-1.13.6/lib/flink-csv-1.13.6.jar:/Users/kanuforo/flink-1.13.6/lib/flink-json-1.13.6.jar:/Users/kanuforo/flink-1.13.6/lib/flink-shaded-zookeeper-3.4.14.jar:/Users/kanuforo/flink-1.13.6/lib/flink-table-blink_2.11-1.13.6.jar:/Users/kanuforo/flink-1.13.6/lib/flink-table_2.11-1.13.6.jar:/Users/kanuforo/flink-1.13.6/lib/log4j-1.2-api-2.17.1.jar:/Users/kanuforo/flink-1.13.6/lib/log4j-api-2.17.1.jar:/Users/kanuforo/flink-1.13.6/lib/log4j-core-2.17.1.jar:/Users/kanuforo/flink-1.13.6/lib/log4j-slf4j-impl-2.17.1.jar:/Users/kanuforo/flink-1.13.6/lib/flink-dist_2.11-1.13.6.jar:::
+2022-08-19 14:50:31,845 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - --------------------------------------------------------------------------------
+2022-08-19 14:50:31,846 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - Registered UNIX signal handlers for [TERM, HUP, INT]
+2022-08-19 14:50:31,849 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - Maximum number of open file descriptors is 10240.
+2022-08-19 14:50:31,856 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: jobmanager.rpc.address, localhost
+2022-08-19 14:50:31,856 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: jobmanager.rpc.port, 6123
+2022-08-19 14:50:31,856 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: jobmanager.memory.process.size, 1600m
+2022-08-19 14:50:31,856 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: taskmanager.memory.process.size, 1728m
+2022-08-19 14:50:31,857 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: taskmanager.numberOfTaskSlots, 1
+2022-08-19 14:50:31,857 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: parallelism.default, 1
+2022-08-19 14:50:31,857 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: jobmanager.execution.failover-strategy, region
+2022-08-19 14:50:31,857 INFO  org.apache.flink.configuration.GlobalConfiguration           [] - Loading configuration property: jobmanager.web.port, 8085
+2022-08-19 14:50:31,899 INFO  org.apache.flink.core.fs.FileSystem                          [] - Hadoop is not in the classpath/dependencies. The extended set of supported File Systems via Hadoop is not available.
+2022-08-19 14:50:31,939 INFO  org.apache.flink.runtime.security.modules.HadoopModuleFactory [] - Cannot create Hadoop Security Module because Hadoop cannot be found in the Classpath.
+2022-08-19 14:50:31,950 INFO  org.apache.flink.runtime.security.modules.JaasModule         [] - Jaas file will be created as /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/jaas-15886224291055817600.conf.
+2022-08-19 14:50:31,956 INFO  org.apache.flink.runtime.security.contexts.HadoopSecurityContextFactory [] - Cannot install HadoopSecurityContext because Hadoop cannot be found in the Classpath.
+2022-08-19 14:50:32,010 INFO  org.apache.flink.configuration.Configuration                 [] - Config uses fallback configuration key 'jobmanager.rpc.address' instead of key 'rest.address'
+2022-08-19 14:50:32,017 INFO  org.apache.flink.runtime.util.LeaderRetrievalUtils           [] - Trying to select the network interface and address to use by connecting to the leading JobManager.
+2022-08-19 14:50:32,017 INFO  org.apache.flink.runtime.util.LeaderRetrievalUtils           [] - TaskManager will try to connect for PT10S before falling back to heuristics
+2022-08-19 14:50:32,051 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - TaskManager will use hostname/address 'KUM-VFZGC9GL40Y' (192.168.0.26) for communication.
+2022-08-19 14:50:32,060 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcServiceUtils        [] - Trying to start actor system, external address 192.168.0.26:0, bind address 0.0.0.0:0.
+2022-08-19 14:50:32,349 INFO  akka.event.slf4j.Slf4jLogger                                 [] - Slf4jLogger started
+2022-08-19 14:50:32,364 INFO  akka.remote.Remoting                                         [] - Starting remoting
+2022-08-19 14:50:32,454 INFO  akka.remote.Remoting                                         [] - Remoting started; listening on addresses :[akka.tcp://flink@192.168.0.26:50633]
+2022-08-19 14:50:32,499 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcServiceUtils        [] - Actor system started at akka.tcp://flink@192.168.0.26:50633
+2022-08-19 14:50:32,513 INFO  org.apache.flink.runtime.metrics.MetricRegistryImpl          [] - No metrics reporter configured, no metrics will be exposed/reported.
+2022-08-19 14:50:32,515 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcServiceUtils        [] - Trying to start actor system, external address 192.168.0.26:0, bind address 0.0.0.0:0.
+2022-08-19 14:50:32,526 INFO  akka.event.slf4j.Slf4jLogger                                 [] - Slf4jLogger started
+2022-08-19 14:50:32,529 INFO  akka.remote.Remoting                                         [] - Starting remoting
+2022-08-19 14:50:32,536 INFO  akka.remote.Remoting                                         [] - Remoting started; listening on addresses :[akka.tcp://flink-metrics@192.168.0.26:50634]
+2022-08-19 14:50:32,541 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcServiceUtils        [] - Actor system started at akka.tcp://flink-metrics@192.168.0.26:50634
+2022-08-19 14:50:32,549 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcService             [] - Starting RPC endpoint for org.apache.flink.runtime.metrics.dump.MetricQueryService at akka://flink-metrics/user/rpc/MetricQueryService_192.168.0.26:50633-904fb0 .
+2022-08-19 14:50:32,557 INFO  org.apache.flink.runtime.blob.PermanentBlobCache             [] - Created BLOB cache storage directory /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/blobStore-7b360742-0963-4cbe-a5f3-917bb9140a12
+2022-08-19 14:50:32,559 INFO  org.apache.flink.runtime.blob.TransientBlobCache             [] - Created BLOB cache storage directory /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/blobStore-84c10797-bd67-41c1-8be4-d95e36d0b5e0
+2022-08-19 14:50:32,562 INFO  org.apache.flink.runtime.externalresource.ExternalResourceUtils [] - Enabled external resources: []
+2022-08-19 14:50:32,562 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - Starting TaskManager with ResourceID: 192.168.0.26:50633-904fb0
+2022-08-19 14:50:32,579 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerServices    [] - Temporary file directory '/var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T': total 112 GB, usable 37 GB (33.04% usable)
+2022-08-19 14:50:32,583 INFO  org.apache.flink.runtime.io.disk.FileChannelManagerImpl      [] - FileChannelManager uses directory /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/flink-io-3728fa79-c74d-4908-b177-13f412214833 for spill files.
+2022-08-19 14:50:32,591 INFO  org.apache.flink.runtime.io.network.netty.NettyConfig        [] - NettyConfig [server address: /0.0.0.0, server port: 0, ssl enabled: false, memory segment size (bytes): 32768, transport type: AUTO, number of server threads: 1 (manual), number of client threads: 1 (manual), server connect backlog: 0 (use Netty's default), client connect timeout (sec): 120, send/receive buffer size (bytes): 0 (use Netty's default)]
+2022-08-19 14:50:32,593 INFO  org.apache.flink.runtime.io.disk.FileChannelManagerImpl      [] - FileChannelManager uses directory /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/flink-netty-shuffle-cc9ad1fa-fa4e-4d59-8e59-648e7a2373bf for spill files.
+2022-08-19 14:50:32,717 INFO  org.apache.flink.runtime.io.network.buffer.NetworkBufferPool [] - Allocated 128 MB for network buffer pool (number of memory segments: 4096, bytes per segment: 32768).
+2022-08-19 14:50:32,727 INFO  org.apache.flink.runtime.io.network.NettyShuffleEnvironment  [] - Starting the network environment and its components.
+2022-08-19 14:50:32,757 INFO  org.apache.flink.runtime.io.network.netty.NettyClient        [] - Transport type 'auto': using NIO.
+2022-08-19 14:50:32,758 INFO  org.apache.flink.runtime.io.network.netty.NettyClient        [] - Successful initialization (took 31 ms).
+2022-08-19 14:50:32,762 INFO  org.apache.flink.runtime.io.network.netty.NettyServer        [] - Transport type 'auto': using NIO.
+2022-08-19 14:50:32,794 INFO  org.apache.flink.runtime.io.network.netty.NettyServer        [] - Successful initialization (took 34 ms). Listening on SocketAddress /0:0:0:0:0:0:0:0:50635.
+2022-08-19 14:50:32,796 INFO  org.apache.flink.runtime.taskexecutor.KvStateService         [] - Starting the kvState service and its components.
+2022-08-19 14:50:32,815 INFO  org.apache.flink.runtime.rpc.akka.AkkaRpcService             [] - Starting RPC endpoint for org.apache.flink.runtime.taskexecutor.TaskExecutor at akka://flink/user/rpc/taskmanager_0 .
+2022-08-19 14:50:32,827 INFO  org.apache.flink.runtime.taskexecutor.DefaultJobLeaderService [] - Start job leader service.
+2022-08-19 14:50:32,829 INFO  org.apache.flink.runtime.filecache.FileCache                 [] - User file cache uses directory /var/folders/6l/1zhsb95x6pb4cv9s6vt66rb0tc7y35/T/flink-dist-cache-ae8e96eb-9130-469b-9839-b2c1170c0794
+2022-08-19 14:50:32,830 INFO  org.apache.flink.runtime.taskexecutor.TaskExecutor           [] - Connecting to ResourceManager akka.tcp://flink@localhost:6123/user/rpc/resourcemanager_*(00000000000000000000000000000000).
+2022-08-19 14:50:32,958 INFO  org.apache.flink.runtime.taskexecutor.TaskExecutor           [] - Resolved ResourceManager address, beginning registration
+2022-08-19 14:50:33,024 INFO  org.apache.flink.runtime.taskexecutor.TaskExecutor           [] - Successful registration at resource manager akka.tcp://flink@localhost:6123/user/rpc/resourcemanager_* under registration id 4ddc97cc949510132225a5ae49e74960.
+2022-08-19 14:51:13,347 INFO  org.apache.flink.runtime.taskexecutor.TaskManagerRunner      [] - RECEIVED SIGNAL 15: SIGTERM. Shutting down as requested.
+2022-08-19 14:51:13,349 INFO  org.apache.flink.runtime.state.TaskExecutorLocalStateStoresManager [] - Shutting down TaskExecutorLocalStateStoresManager.
+2022-08-19 14:51:13,351 INFO  org.apache.flink.runtime.blob.PermanentBlobCache             [] - Shutting down BLOB cache
+2022-08-19 14:51:13,350 INFO  org.apache.flink.runtime.blob.TransientBlobCache             [] - Shutting down BLOB cache
