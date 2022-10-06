@@ -2,6 +2,7 @@ package org.ohnlp.backbone.io.bigquery;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.TableSchema;
 import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils;
@@ -23,6 +24,7 @@ import java.util.List;
 
 public class BigQueryLoad extends Load {
     private String tablespec;
+    private Schema writeSchema;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
@@ -44,8 +46,15 @@ public class BigQueryLoad extends Load {
                 "Write to BigQuery",
                 BigQueryIO.writeTableRows()
                         .to(this.tablespec)
+                        .withSchema(BigQueryUtils.toTableSchema(this.writeSchema))
                         .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
         );
 
+    }
+
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        this.writeSchema = input;
+        return input;
     }
 }

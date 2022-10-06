@@ -51,6 +51,13 @@ public class SolrExtract extends Extract {
     }
 
     @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return Schema.builder()
+                .addStringField("note_id")
+                .addStringField("note_text").build();
+    }
+
+    @Override
     public PCollection<Row> expand(PBegin input) {
         Schema rowSchema = Schema.builder()
                 .addStringField("note_id")

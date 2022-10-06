@@ -54,6 +54,11 @@ public class ParquetExtract extends Extract {
     }
 
     @Override
+    public org.apache.beam.sdk.schemas.Schema calculateOutputSchema(org.apache.beam.sdk.schemas.Schema input) {
+        return this.beamSchema;
+    }
+
+    @Override
     public PCollection<Row> expand(PBegin input) {
         return input
                 .apply("Parquet Read", ParquetIO

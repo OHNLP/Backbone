@@ -117,6 +117,11 @@ public class JDBCExtract extends Extract {
         }
     }
 
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return null;
+    }
+
     private String[] findPaginationOrderingColumns(String query) throws ComponentInitializationException {
         try (Connection conn = this.ds.getConnection()) {
             ResultSetMetaData queryMeta = conn.prepareStatement(query).getMetaData();

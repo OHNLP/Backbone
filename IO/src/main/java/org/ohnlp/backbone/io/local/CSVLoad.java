@@ -1,6 +1,7 @@
 package org.ohnlp.backbone.io.local;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
