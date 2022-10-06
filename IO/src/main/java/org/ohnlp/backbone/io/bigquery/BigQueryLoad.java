@@ -23,10 +23,17 @@ import java.util.List;
 
 public class BigQueryLoad extends Load {
     private String tablespec;
+    private Schema schema;
 
     @Override
     public void initFromConfig(JsonNode config) throws ComponentInitializationException {
         this.tablespec = config.get("dest_table").asText();
+        JsonNode schemaConfig = config.get("schema");
+        List<Schema.Field> fields = new ArrayList<>();
+        schemaConfig.fields().forEachRemaining((e) -> {
+            fields.add(Schema.Field.of(e.getKey(), Schema.FieldType.of(Schema.TypeName.valueOf(e.getValue().asText()))));
+        });
+        this.schema = Schema.of(fields.toArray(new Schema.Field[0]));
     }
 
     @Override
@@ -44,6 +51,7 @@ public class BigQueryLoad extends Load {
                 "Write to BigQuery",
                 BigQueryIO.writeTableRows()
                         .to(this.tablespec)
+                        .withSchema(BigQueryUtils.toTableSchema(schema))
                         .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
         );
 
