@@ -18,6 +18,24 @@ An example ETL task supported by Backbone common to healthcare NLP is
 By wrapping [Apache Beam](https://beam.apache.org/), any created pipelines are runnable out-of-the-box across
 a wide variety of environments with minimal additional configuration, from a local computer to distributed environments
 such as Apache Spark or Google Cloud Dataflow, ensuring scalability and timely completion regardless of input data size
+
+## System Requirements
+*	Data Source/Output: Any of the following
+    *	JDBC-compatible data source/output location (with OMOP schema preferred, but not required)
+    *  Google Bigquery
+    *	Apache Hive/HCatalog
+    *	MongoDB v6.0+ with allowDiskUseByDefault set to true if using as data source
+    *	Supported, but extremely not recommended for production workloads: Elasticsearch v6+, File based I/O (CSV or JSONL in/out, or Parquet Format with predefined schema)
+*	Computational Needs: One of the following. JDK8+ required, 11+ heavily recommended (has performance and stability implications) regardless of option chosen. 
+    *	Local/non-cluster-based computation: Unix/Linux based machine with (# CPU cores available on machine) * .8 >= # CPU cores desired. Must be able to change open file limit via ulimit command for production workloads
+    *	Spark cluster (either via yarn or local computation) 
+    *	Flink Cluster (either local/via yarn, and/or AWS default setup)
+    *	GCP Dataflow
+ 
+Whichever computational system chosen MUST be able to access your data input/output locations (i.e., check firewall settings etc)
+ 
+For computational needs: Note that core count can vary depending on workload/how fast you care about things processing. A good rule of thumb is 3 documents/second/core for average workloads, but can vary. For maximum stability (i.e., with maximum-size UMLS-based dictionary), 2GB RAM/CPU core is recommended although most workloads will use far less
+
    
 ## Getting Started
 
