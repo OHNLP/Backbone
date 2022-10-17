@@ -2,7 +2,9 @@ package org.ohnlp.backbone.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.POutput;
@@ -26,13 +28,17 @@ public class BackboneRunner {
         PipelineBuilder.BackboneETLPipeline pipeline = PipelineBuilder.buildETLPipelineFromConfig(config);
         // Now run in sequence
         // - Extract
-        PCollection<Row> df = p.apply("Extract-Step-0", pipeline.extract).setCoder(new RowToByteArrCoder());
+        Schema workingSchema = pipeline.extract.calculateOutputSchema(null);
+        PCollection<Row> df = p.apply("Extract-Step-0", pipeline.extract);
+        workingSchema = workingSchema == null ? df.getSchema() : workingSchema;
         // - Transform
         int i = 1;
         for (Transform t : pipeline.transforms) {
-            df = df.apply("Transform-Step-" + i++, t).setCoder(new RowToByteArrCoder());
+            workingSchema = t.calculateOutputSchema(workingSchema);
+            df = df.apply("Transform-Step-" + i++, t).setRowSchema(workingSchema).setCoder(RowCoder.of(workingSchema));
         }
         // - Load
+        pipeline.load.calculateOutputSchema(workingSchema);
         POutput complete = df.apply("Load-Step-" + i++, pipeline.load);
         p.run().waitUntilFinish();
         // - Done

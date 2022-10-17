@@ -26,6 +26,12 @@ public class BigQueryExtract extends Extract {
         this.query = config.get("query").asText();
         initSchema(config.get("schema"));
     }
+
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return this.schema;
+    }
+
     private void initSchema(JsonNode schema) {
         Schema.Builder schemaBuilder = Schema.builder();
 

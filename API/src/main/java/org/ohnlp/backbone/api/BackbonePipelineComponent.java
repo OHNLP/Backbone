@@ -1,6 +1,7 @@
 package org.ohnlp.backbone.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PInput;
 import org.apache.beam.sdk.values.POutput;
@@ -19,4 +20,6 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      *                                          unexpected values
      */
     public abstract void initFromConfig(JsonNode config) throws ComponentInitializationException;
+
+    public abstract Schema calculateOutputSchema(Schema input);
 }

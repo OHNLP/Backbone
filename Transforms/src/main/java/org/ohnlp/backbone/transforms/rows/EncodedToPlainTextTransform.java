@@ -56,6 +56,15 @@ public class EncodedToPlainTextTransform extends Transform {
         }
     }
 
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        List<Schema.Field> inputFields = input.getFields();
+        if (!this.inputField.equals(this.outputField)) {
+            inputFields.add(Schema.Field.of(this.outputField, Schema.FieldType.STRING));
+        }
+        return Schema.of(inputFields.toArray(new Schema.Field[0]));
+    }
+
 
     @Override
     public PCollection<Row> expand(PCollection<Row> input) {

@@ -50,6 +50,11 @@ public class FileSystemExtract extends Extract {
     }
 
     @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return this.rowSchema;
+    }
+
+    @Override
     public PCollection<Row> expand(PBegin input) {
         PCollection<MatchResult.Metadata> records = this.fileIterator.expand(input);
         return records

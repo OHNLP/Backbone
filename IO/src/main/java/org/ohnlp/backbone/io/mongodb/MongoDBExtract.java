@@ -73,6 +73,11 @@ public class MongoDBExtract extends Extract {
         }
     }
 
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return this.schema;
+    }
+
     private void initSchema(JsonNode schema) {
         LinkedList<String> pathQue = new LinkedList<>();
         Map<List<String>, PrimitiveType> mappings = new HashMap<>(); // TODO implement more complex types (e.g. embedded objects and arrays)

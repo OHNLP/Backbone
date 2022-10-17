@@ -15,6 +15,7 @@ import java.util.List;
 public class Select extends Transform {
 
     private List<String> selectedFields;
+    private Schema outSchema;
 
 
     @Override
@@ -28,19 +29,21 @@ public class Select extends Transform {
     }
 
     @Override
+    public Schema calculateOutputSchema(Schema input) {
+        List<Schema.Field> outputSchemaFields = new ArrayList<>();
+        for (String fieldName : selectedFields) {
+            outputSchemaFields.add(input.getField(fieldName));
+        }
+        this.outSchema = Schema.of(outputSchemaFields.toArray(new Schema.Field[0]));
+        return outSchema;
+    }
+
+    @Override
     public PCollection<Row> expand(PCollection<Row> input) {
         return input.apply("Subset Columns", ParDo.of(new DoFn<Row, Row>() {
             @ProcessElement
             public void process(ProcessContext c) {
                 Row input = c.element();
-                // We have to dynamically resolve schema row by row because
-                // we don't store schema in the collection itself as it is user-configurable/dynamic
-                Schema inputSchema = input.getSchema();
-                List<Schema.Field> outputSchemaFields = new ArrayList<>();
-                for (String fieldName : selectedFields) {
-                    outputSchemaFields.add(inputSchema.getField(fieldName));
-                }
-                Schema outSchema = Schema.of(outputSchemaFields.toArray(new Schema.Field[0]));
                 // And now just map the values
                 List<Object> outputValues = new ArrayList<>();
                 for (String s : selectedFields) {

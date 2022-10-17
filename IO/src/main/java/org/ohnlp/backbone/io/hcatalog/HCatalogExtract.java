@@ -3,6 +3,7 @@ package org.ohnlp.backbone.io.hcatalog;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.io.hcatalog.HCatToRow;
 import org.apache.beam.sdk.io.hcatalog.HCatalogIO;
+import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
@@ -35,6 +36,11 @@ public class HCatalogExtract extends Extract {
         this.configProperties.put("hive.metastore.uris", config.get("metastore_uris").asText());
         this.database = config.get("database").asText();
         this.table = config.get("table").asText();
+    }
+
+    @Override
+    public Schema calculateOutputSchema(Schema input) {
+        return null;
     }
 
     @Override
