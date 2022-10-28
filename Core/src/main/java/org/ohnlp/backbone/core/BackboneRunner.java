@@ -30,6 +30,9 @@ public class BackboneRunner {
         // - Extract
         Schema workingSchema = pipeline.extract.calculateOutputSchema(null);
         PCollection<Row> df = p.apply("Extract-Step-0", pipeline.extract);
+        if (workingSchema != null) {
+            df = df.setRowSchema(workingSchema).setCoder(RowCoder.of(workingSchema))
+        }
         workingSchema = workingSchema == null ? df.getSchema() : workingSchema;
         // - Transform
         int i = 1;
