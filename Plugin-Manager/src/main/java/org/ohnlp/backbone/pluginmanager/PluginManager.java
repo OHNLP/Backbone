@@ -82,6 +82,8 @@ public class PluginManager {
                             throw new IllegalStateException(e);
                         }
                     });
+                } else {
+                    Files.copy(resource.toPath(), fs.getPath("/resources/" + resource.getName()), StandardCopyOption.REPLACE_EXISTING);
                 }
             }
         } catch (IOException e) {
