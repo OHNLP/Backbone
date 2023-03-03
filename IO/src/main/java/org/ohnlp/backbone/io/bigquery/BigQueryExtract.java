@@ -11,6 +11,7 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.mongodb.MongoDBExtract;
 
@@ -18,34 +19,25 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BigQueryExtract extends Extract {
+    @ConfigurationProperty(
+            path = "query",
+            desc = "The BigQuery query to use. Can be a tablespec (e.g. project_id:dataset_id.table_id) or a full query"
+    )
     private String query; // SELECT * FROM project_id:dataset_id.table_id
+
+    @ConfigurationProperty(
+            path = "schema",
+            desc = "The schema of the input data"
+    )
     private Schema schema;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.query = config.get("query").asText();
-        initSchema(config.get("schema"));
+    public void init() throws ComponentInitializationException {
     }
 
     @Override
     public Schema calculateOutputSchema(Schema input) {
         return this.schema;
-    }
-
-    private void initSchema(JsonNode schema) {
-        Schema.Builder schemaBuilder = Schema.builder();
-
-        schema.fields().forEachRemaining(e -> {
-            String fieldName = e.getKey();
-            Schema.FieldType type;
-            try {
-                type = (Schema.FieldType) Schema.FieldType.class.getDeclaredField(e.getValue().asText().toUpperCase(Locale.ROOT)).get(null);
-            } catch (IllegalAccessException | NoSuchFieldException ex) {
-                throw new RuntimeException(ex);
-            }
-            schemaBuilder.addField(fieldName, type);
-        });
-        this.schema = schemaBuilder.build();
     }
 
     @Override

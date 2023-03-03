@@ -8,6 +8,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
@@ -42,27 +43,58 @@ import java.util.List;
  * </pre>
  */
 public class JDBCLoad extends Load {
+    @ConfigurationProperty(
+            path = "url",
+            desc = "The JDBC URL to connect to"
+    )
+    private String url;
+    @ConfigurationProperty(
+            path = "driver",
+            desc = "The JDBC driver to use for the connection"
+    )
+    private String driver;
+    @ConfigurationProperty(
+            path = "user",
+            desc = "Database User"
+    )
+    private String user;
+    @ConfigurationProperty(
+            path = "password",
+            desc = "Database Password"
+    )
+    private String password;
+    @ConfigurationProperty(
+            path = "query",
+            desc = "Database Query to use as inserts. Use ? to indicate column value arguments. " +
+                    "E.g., INSERT INTO tablename (column1, column2, column3) VALUES (?, ?, ?)"
+    )
+    private String query;
+    @ConfigurationProperty(
+            path = "paramMappings",
+            desc = "List of columns to use as values to insert. Should follow same order as the ?s used in the insert query"
+    )
+    private List<String> columnMappings;
+    @ConfigurationProperty(
+            path = "idleTimeout",
+            desc = "Amount of time in milliseconds to keep idle connections open. 0 for no limit",
+            required = false
+    )
+    private int idleTimeout = 0;
     private JdbcIO.Write<Row> runnableInstance;
 
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
+    public void init() throws ComponentInitializationException {
         try {
-            String url = config.get("url").asText();
-            String driver = config.get("driver").asText();
-            String user = config.get("user").asText();
-            String password = config.get("password").asText();
-            String query = config.get("query").asText();
             List<RowToPSMappingFunction> mappingOps = new LinkedList<>();
             int i = 1;
-            for (JsonNode child : config.get("paramMappings")) {
-                mappingOps.add(new RowToPSMappingFunction(i, child.asText()));
-                i++;
+            for (String column : columnMappings) {
+                mappingOps.add(new RowToPSMappingFunction(i++, column));
             }
             ComboPooledDataSource ds = new ComboPooledDataSource();
             ds.setDriverClass(driver);
             ds.setJdbcUrl(url);
             ds.setUser(user);
             ds.setPassword(password);
-            ds.setMaxIdleTime(config.has("idleTimeout") ? config.get("idleTimeout").asInt() : 0);
+            ds.setMaxIdleTime(idleTimeout);
             JdbcIO.DataSourceConfiguration datasourceConfig = JdbcIO.DataSourceConfiguration.create(ds);
             this.runnableInstance = JdbcIO.<Row>write()
                     .withDataSourceConfiguration(datasourceConfig)

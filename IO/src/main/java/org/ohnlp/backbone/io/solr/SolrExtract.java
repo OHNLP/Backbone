@@ -10,6 +10,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.apache.solr.common.SolrDocument;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 /**
@@ -31,23 +32,46 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 // TODO currently input is limited strictly to three fields, make this more flexible
 // Most likely possibility is to see a schema.xml as input
 public class SolrExtract extends Extract {
+    @ConfigurationProperty(
+            path = "host",
+            desc = "The Solr Host"
+    )
     private String solrHost;
-    private String user;
+    @ConfigurationProperty(
+            path = "user",
+            desc = "The Solr Username or NONE if no credentials needed",
+            required = false
+    )
+    private String user = "NONE";
+    @ConfigurationProperty(
+            path = "password",
+            desc = "The Solr password or NONE if no credentials needed",
+            required = false
+    )
     private String pass;
-    private String query;
-    private String docIdField;
-    private String docTextField;
+    @ConfigurationProperty(
+            path = "collection",
+            desc = "The Solr collection to retrieve from"
+    )
     private String collection;
+    @ConfigurationProperty(
+            path = "query",
+            desc = "The Solr query to run"
+    )
+    private String query;
+    @ConfigurationProperty(
+            path = "doc_id_field",
+            desc = "The field to use as document ids"
+    )
+    private String docIdField;
+    @ConfigurationProperty(
+            path = "doc_text_field",
+            desc = "The field to use as document text"
+    )
+    private String docTextField;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.solrHost = config.get("host").asText();
-        this.user = config.get("user").asText();
-        this.pass = config.get("password").asText();
-        this.query = config.get("query").asText();
-        this.docIdField = config.get("doc_id_field").asText();
-        this.docTextField = config.get("doc_text_field").asText();
-        this.collection = config.get("collection").asText();
+    public void init() throws ComponentInitializationException {
     }
 
     @Override

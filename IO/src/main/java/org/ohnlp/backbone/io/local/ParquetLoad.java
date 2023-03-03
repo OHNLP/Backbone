@@ -12,6 +12,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.ArrayList;
@@ -26,33 +27,34 @@ import java.util.ArrayList;
  * }
  */
 public class ParquetLoad extends Load {
+
+    @ConfigurationProperty(
+            path = "fileSystemPath",
+            desc = "The path to write to"
+    )
     private String dir;
-    private ArrayList<String> fields;
+    @ConfigurationProperty(
+            path = "fields",
+            desc = "An optional list/subset of the columns to write. Leave blank for all",
+            required = false
+    )
+    private ArrayList<String> fields = new ArrayList<>();
 
     private transient Schema beamSchema;
-    private transient org.apache.avro.Schema avroSchema;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.dir = config.get("fileSystemPath").asText();
-        this.fields = new ArrayList<>();
-        if (config.has("fields")) {
-            config.get("fields").forEach((f) -> {
-                String field = f.asText();
-                fields.add(field);
-            });
-        }
-
+    public void init() throws ComponentInitializationException {
     }
 
 
     @Override
     public PDone expand(PCollection<Row> input) {
         beamSchema = input.getSchema();
+        // TODO seems subselection functionality is not present?
         input.apply("Subselect Columns and Convert to Avro Format", ParDo.of(new DoFn<Row, GenericRecord>() {
                     @ProcessElement
                     public void processElement(@Element Row input, OutputReceiver<GenericRecord> output) {
-                        output.output(AvroUtils.toGenericRecord(input, avroSchema));
+                        output.output(AvroUtils.toGenericRecord(input, AvroUtils.toAvroSchema(beamSchema)));
                     }
                 }))
                 .apply("Write to Filesystem", FileIO

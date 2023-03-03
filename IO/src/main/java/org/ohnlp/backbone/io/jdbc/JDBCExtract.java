@@ -12,6 +12,7 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.sql.*;
@@ -23,16 +24,57 @@ import java.util.*;
  * using offsets for pagination.
  */
 public class JDBCExtract extends Extract {
-    private int batchSize;
-    private JdbcIO.DataSourceConfiguration datasourceConfig;
+    @ConfigurationProperty(
+            path = "url",
+            desc = "The JDBC URL to connect to"
+    )
+    private String url;
+    @ConfigurationProperty(
+            path = "driver",
+            desc = "The JDBC driver to use for the connection"
+    )
+    private String driver;
+    @ConfigurationProperty(
+            path = "user",
+            desc = "Database User"
+    )
+    private String user;
+    @ConfigurationProperty(
+            path = "password",
+            desc = "Database Password"
+    )
+    private String password;
+    @ConfigurationProperty(
+            path = "query",
+            desc = "Database Query to Execute"
+    )
     private String query;
-    private long numBatches;
+    @ConfigurationProperty(
+            path = "batch_size",
+            desc = "Approximate number of documents per batch/partition. Lower this is running into memory issues.",
+            required = false
+    )
+    private int batchSize = 1000;
+    @ConfigurationProperty(
+            path = "identifier_col",
+            desc = "An ID column returned as part of the query that can be used to identify and partition records.",
+            required = false
+    )
     private String identifierCol = null;
+
+    @ConfigurationProperty(
+            path = "idle_timeout",
+            desc = "Amount of time in milliseconds to keep idle connections open. 0 for no limit",
+            required = false
+    )
+    private int idleTimeout = 0;
+
+    private JdbcIO.DataSourceConfiguration datasourceConfig;
+    private long numBatches;
     private ComboPooledDataSource ds;
     private String[] orderByCols;
     private String viewName;
     private String orderedQuery;
-    private String driver;
 
     /**
      * Initializes a Beam JdbcIO Provider
@@ -54,27 +96,19 @@ public class JDBCExtract extends Extract {
      * By default, batch_size and identifier_col are optional but are highly recommended as the defaults may
      * not be optimal for performance
      *
-     * @param config The configuration section pertaining to this component
      * @throws ComponentInitializationException if an error occurs during initialization or if configuraiton contains
      *                                          unexpected values
      */
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
+    public void init() throws ComponentInitializationException {
         try {
-            String url = config.get("url").asText();
-            this.driver = config.get("driver").asText();
-            String user = config.get("user").asText();
-            String password = config.get("password").asText();
-            this.query = config.get("query").asText();
-            this.batchSize = config.has("batch_size") ? config.get("batch_size").asInt() : 1000;
             this.ds = new ComboPooledDataSource();
             ds.setDriverClass(driver);
             ds.setJdbcUrl(url);
             ds.setUser(user);
             ds.setPassword(password);
-            ds.setMaxIdleTime(config.has("idleTimeout") ? config.get("idleTimeout").asInt() : 0);
+            ds.setMaxIdleTime(this.idleTimeout);
             this.datasourceConfig = JdbcIO.DataSourceConfiguration
                     .create(ds);
-            this.identifierCol = config.has("identifier_col") ? config.get("identifier_col").asText() : null;
             // We will first preflight with a query that counts the number of records so that we can get number
             // of batches
             String runId = UUID.randomUUID().toString().replaceAll("-", "_");

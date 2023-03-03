@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.io.local;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericRecord;
@@ -13,9 +12,10 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
-import java.util.Locale;
+import java.util.Map;
 
 /**
  * Reads Parquet Formatted Files From Directory
@@ -29,28 +29,35 @@ import java.util.Locale;
  *         "fieldName": "fieldType"
  *     }
  * }
- *
- * For a list of field types, please consult https://avro.apache.org/docs/current/spec.html#schema_primitive.
- * Primitive types are the only types currently supported.
  */
 public class ParquetExtract extends Extract {
+    @ConfigurationProperty(
+            path = "fileSystemPath",
+            desc = "The file system path containing parquet records"
+    )
     private String dir;
+    @ConfigurationProperty(
+            path = "recordName",
+            desc = "Parquet Schema Record Name"
+    )
+    private String recordName;
+    @ConfigurationProperty(
+            path = "recordNamespace",
+            desc = "Parquet Schema Record Namespace"
+    )
+    private String recordNamespace;
+
     private transient Schema schema;
+
+    @ConfigurationProperty(
+            path = "schema",
+            desc = "The record schema"
+    )
     private org.apache.beam.sdk.schemas.Schema beamSchema;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.dir = config.get("fileSystemPath").asText();
-        SchemaBuilder.FieldAssembler<Schema> avroSchemaBuilder = SchemaBuilder.builder()
-                .record(config.get("recordName").asText())
-                .namespace(config.get("recordNamespace").asText())
-                .fields();
-        config.get("schema").fields().forEachRemaining((e) -> {
-            String field = e.getKey();
-            avroSchemaBuilder.name(field).type(e.getValue().asText()).noDefault();
-        });
-        schema = avroSchemaBuilder.endRecord();
-        beamSchema = AvroUtils.toBeamSchema(schema);
+    public void init() throws ComponentInitializationException {
+        schema = AvroUtils.toAvroSchema(beamSchema, recordName, recordNamespace);
     }
 
     @Override

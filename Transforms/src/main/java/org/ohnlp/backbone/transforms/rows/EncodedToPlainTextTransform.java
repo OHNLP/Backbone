@@ -12,6 +12,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.xml.sax.SAXException;
 
@@ -42,18 +43,19 @@ import java.util.List;
  */
 public class EncodedToPlainTextTransform extends Transform {
 
+    @ConfigurationProperty(
+            path = "input",
+            desc = "Input field containing decorated text"
+    )
     private String inputField;
+    @ConfigurationProperty(
+            path = "output",
+            desc = "Field into which to place decoded plaintext"
+    )
     private String outputField;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        try {
-            this.inputField = config.get("input").asText();
-            this.outputField = config.get("output").asText();
-
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+    public void init() throws ComponentInitializationException {
     }
 
     @Override

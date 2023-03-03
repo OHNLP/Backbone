@@ -7,6 +7,7 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.ArrayList;
@@ -14,18 +15,16 @@ import java.util.List;
 
 public class Select extends Transform {
 
+    @ConfigurationProperty(
+            path = "select",
+            desc = "List of columns to select"
+    )
     private List<String> selectedFields;
     private Schema outSchema;
 
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.selectedFields = new ArrayList<>();
-        if (config.has("select")) {
-            for (JsonNode fieldName : config.get("select")) {
-                selectedFields.add(fieldName.asText());
-            }
-        }
+    public void init() throws ComponentInitializationException {
     }
 
     @Override

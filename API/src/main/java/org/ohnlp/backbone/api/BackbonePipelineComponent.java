@@ -13,13 +13,15 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 public abstract class BackbonePipelineComponent<I extends PInput, O extends POutput> extends PTransform<I, O> {
     /**
      * Initializes the component from a specified JSON configuration. Note that any encrypted properties will have been
-     * decrypted to plaintext form at this stage via Jasypt
+     * decrypted to plaintext form at this stage via Jasypt.
+     * <p>
+     * Configuration properties as denoted by the {@link org.ohnlp.backbone.api.annotations.ConfigurationProperty}
+     * annotation will be injected and populated prior to this step
      *
-     * @param config The configuration section pertaining to this component
      * @throws ComponentInitializationException if an error occurs during initialization or if configuraiton contains
      *                                          unexpected values
      */
-    public abstract void initFromConfig(JsonNode config) throws ComponentInitializationException;
+    public abstract void init() throws ComponentInitializationException;
 
     public abstract Schema calculateOutputSchema(Schema input);
 }

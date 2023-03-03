@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.io.local;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.fs.MatchResult;
 import org.apache.beam.sdk.schemas.Schema;
@@ -10,6 +9,7 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.IOException;
@@ -34,15 +34,26 @@ import java.util.List;
 public class FileSystemExtract extends Extract {
 
     private FileIO.Match fileIterator;
+    @ConfigurationProperty(
+            path = "fileSystemPath",
+            desc = "The file system path to read from"
+    )
+    private String dir;
+    @ConfigurationProperty(
+            path = "recordIDField",
+            desc = "The name of the column into which file names should be placed"
+    )
     private String recordIDField;
+    @ConfigurationProperty(
+            path = "recordBodyField",
+            desc = "The name of the column into which file contents should be placed"
+    )
     private String recordBodyField;
     private Schema rowSchema;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.fileIterator = FileIO.match().filepattern(config.get("fileSystemPath").asText() + "/*");
-        this.recordIDField = config.get("recordIDField").asText();
-        this.recordBodyField = config.get("recordBodyField").asText();
+    public void init() throws ComponentInitializationException {
+        this.fileIterator = FileIO.match().filepattern(dir + "/*");
         List<Schema.Field> fields = new LinkedList<>();
         fields.add(Schema.Field.of(recordIDField, Schema.FieldType.STRING));
         fields.add(Schema.Field.of(recordBodyField, Schema.FieldType.STRING));

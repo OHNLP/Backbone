@@ -8,6 +8,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowHeaderToCSVEncoding;
 import org.ohnlp.backbone.io.local.encodings.RowValueToCSVEncoding;
@@ -33,20 +34,26 @@ import java.util.List;
  * </pre>
  */
 public class CSVLoad extends Load {
+    @ConfigurationProperty(
+            path = "fileSystemPath",
+            desc = "The file system path to write to"
+    )
     private String workingDir;
-    private boolean writeHeader;
-    private List<String> fields;
+    @ConfigurationProperty(
+            path = "writeHeader",
+            desc = "Whether the header should be appended to output",
+            required = false
+    )
+    private boolean writeHeader = true;
+    @ConfigurationProperty(
+            path = "fields",
+            desc = "An optional array of columns to include in output. Leave blank for all",
+            required = false
+    )
+    private List<String> fields = new ArrayList<>();
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.workingDir = config.get("fileSystemPath").asText();
-        this.writeHeader = config.get("writeHeader").asBoolean(true);
-        this.fields = new ArrayList<>();
-        if (config.has("fields")) {
-            for (JsonNode field : config.get("fields")) {
-                fields.add(field.asText());
-            }
-        }
+    public void init() throws ComponentInitializationException {
     }
 
     @Override

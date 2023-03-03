@@ -8,6 +8,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
 import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
@@ -31,18 +32,21 @@ import java.util.List;
  */
 public class JSONLLoad extends Load {
 
+    @ConfigurationProperty(
+            path = "fileSystemPath",
+            desc = "The path to write to"
+    )
     private String workingDir;
-    private List<String> fields;
+    @ConfigurationProperty(
+            path = "fields",
+            desc = "An optional list/subset of the columns to write. Leave blank for all",
+            required = false
+    )
+    private List<String> fields = new ArrayList<>();
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.workingDir = config.get("fileSystemPath").asText();
-        this.fields = new ArrayList<>();
-        if (config.has("fields")) {
-            for (JsonNode field : config.get("fields")) {
-                fields.add(field.asText());
-            }
-        }
+    public void init() throws ComponentInitializationException {
+
 
     }
 

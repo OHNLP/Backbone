@@ -16,6 +16,7 @@ import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
 import org.joda.time.Duration;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.ArrayList;
@@ -23,12 +24,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class BigQueryLoad extends Load {
+
+    @ConfigurationProperty(
+            path = "dest_table",
+            desc = "The destination BigQuery table specification to connect to."
+    )
     private String tablespec;
     private Schema writeSchema;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.tablespec = config.get("dest_table").asText();
+    public void init() throws ComponentInitializationException {
     }
 
     @Override

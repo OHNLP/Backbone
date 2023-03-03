@@ -9,6 +9,7 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.HashMap;
@@ -27,15 +28,26 @@ import java.util.Map;
  */
 public class HCatalogExtract extends Extract {
     Map<String, String> configProperties;
+    @ConfigurationProperty(
+            path = "metastore_uris",
+            desc = "The HCatalog metastore URIs in the format thrift://metastore-host:port"
+    )
+    private String metaStoreURIs;
+    @ConfigurationProperty(
+            path = "database",
+            desc = "The HCatalog database to read from"
+    )
     private String database;
+    @ConfigurationProperty(
+            path = "table",
+            desc = "The HCatalog table to read from"
+    )
     private String table;
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
+    public void init() throws ComponentInitializationException {
         this.configProperties = new HashMap<>();
-        this.configProperties.put("hive.metastore.uris", config.get("metastore_uris").asText());
-        this.database = config.get("database").asText();
-        this.table = config.get("table").asText();
+        this.configProperties.put("hive.metastore.uris", metaStoreURIs);
     }
 
     @Override

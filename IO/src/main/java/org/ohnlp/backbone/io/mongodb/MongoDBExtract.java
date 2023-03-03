@@ -16,6 +16,7 @@ import org.bson.BsonDocument;
 import org.bson.Document;
 import org.joda.time.DateTime;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
@@ -52,56 +53,70 @@ import java.util.stream.Collectors;
  * referred to using "complex_field1.field3" further on down the pipeline
  */
 public class MongoDBExtract extends Extract {
+    @ConfigurationProperty(
+            path = "uri",
+            desc = "The MongoDB URI to connect to in the format mongodb://[username:password@]host[:port1][,...hostN[:portN]]"
+    )
     private String uri;
+    @ConfigurationProperty(
+            path = "database",
+            desc = "The MongoDB Database to connect to"
+    )
     private String database;
+    @ConfigurationProperty(
+            path = "collection",
+            desc = "The MongoDB Collection to connect to"
+    )
     private String collection;
+    @ConfigurationProperty(
+            path = "schema",
+            desc = "The input schema",
+            required = false
+    )
     private Schema schema;
-    private ArrayList<SchemaDefinition> mappings;
-    private List<String> filter;
+    private LinkedList<SchemaDefinition> mappings;
+    @ConfigurationProperty(
+            path = "aggregate_pipeline",
+            desc = "The MongoDB query function pipeline as a list of JSON-escaped strings if applicable. Leave blank otherwise",
+            required = false
+    )
+    private List<String> filter = new ArrayList<>();
 
     @Override
-    public void initFromConfig(JsonNode config) throws ComponentInitializationException {
-        this.uri = config.get("uri").asText();
-        this.database = config.get("database").asText();
-        this.collection = config.get("collection").asText();
-        initSchema(config.get("schema"));
-        this.filter = new ArrayList<>();
-        if (config.has("aggregate_pipeline")) {
-            config.get("aggregate_pipeline").forEach(str -> {
-                this.filter.add(str.asText());
-            });
+    public void init() throws ComponentInitializationException {
+        // Iterate through injected schema to generate equivalent mappings
+        this.mappings = new LinkedList<>();
+        LinkedList<String> pathQue = new LinkedList<>();
+        for (Schema.Field field : schema.getFields()) {
+            parseSchema(field, pathQue);
         }
+    }
+
+    private void parseSchema(Schema.Field field, LinkedList<String> pathQue) {
+        pathQue.add(field.getName());
+        Schema.FieldType type;
+        if (field.getType().getTypeName().equals(Schema.TypeName.ROW)) {
+            for (Schema.Field f : field.getType().getRowSchema().getFields()) {
+                parseSchema(f, pathQue);
+            }
+            return;
+        } else if (field.getType().getTypeName().isCollectionType()) {
+            pathQue.add("[]");
+            type = field.getType().getCollectionElementType();
+            throw new UnsupportedOperationException("Collection types currently not supported");
+            // TODO this should be implementable by forcing grouping once collections encountered
+        } else if (field.getType().getTypeName().isMapType()) {
+            throw new UnsupportedOperationException("Map types currently not supported");
+        } else {
+            type = field.getType();
+        }
+        PrimitiveType primType = PrimitiveType.fieldTypeToPrimitiveTypeMap.get(type);
+        this.mappings.addLast(new SchemaDefinition(new ArrayList<>(pathQue), primType));
     }
 
     @Override
     public Schema calculateOutputSchema(Schema input) {
         return this.schema;
-    }
-
-    private void initSchema(JsonNode schema) {
-        LinkedList<String> pathQue = new LinkedList<>();
-        Map<List<String>, PrimitiveType> mappings = new HashMap<>(); // TODO implement more complex types (e.g. embedded objects and arrays)
-        parseSchema(schema, pathQue, mappings);
-        this.mappings = mappings.entrySet().stream().map(e -> new SchemaDefinition(e.getKey(), e.getValue())).collect(Collectors.toCollection(ArrayList::new)); // Use list to ensure consistant iteration order between mapping/schema
-        Schema.Builder schemaBuilder = Schema.builder();
-        this.mappings.forEach(e -> {
-            schemaBuilder.addField(Schema.Field.of(String.join(".", e.getKey()), e.getType().beamType));
-        });
-        this.schema = schemaBuilder.build();
-    }
-
-    private void parseSchema(JsonNode currNode, LinkedList<String> pathQue, Map<List<String>, PrimitiveType> mappings) {
-        currNode.fieldNames().forEachRemaining(field -> {
-            pathQue.addLast(field);
-            if (currNode.get(field) instanceof ObjectNode) {
-                parseSchema(currNode.get(field), pathQue, mappings);
-            } else {
-                // else if instanceof ArrayNode
-                PrimitiveType type = PrimitiveType.valueOf(currNode.get(field).asText().toUpperCase(Locale.ROOT));
-                mappings.put(new LinkedList<>(pathQue), type);
-            }
-            pathQue.removeLast();
-        });
     }
 
     @Override
@@ -167,6 +182,13 @@ public class MongoDBExtract extends Extract {
         LONG(Schema.FieldType.of(Schema.TypeName.INT64)),
         STRING(Schema.FieldType.of(Schema.TypeName.STRING)),
         OBJECT_ID(Schema.FieldType.of(Schema.TypeName.STRING));
+
+        private static Map<Schema.FieldType, PrimitiveType> fieldTypeToPrimitiveTypeMap = new HashMap<>();
+        static {
+            for (PrimitiveType type : PrimitiveType.values()) {
+                fieldTypeToPrimitiveTypeMap.put(type.beamType, type);
+            }
+        }
 
         private final Schema.FieldType beamType;
 
