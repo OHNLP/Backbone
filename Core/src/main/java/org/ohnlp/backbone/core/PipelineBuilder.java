@@ -1,10 +1,9 @@
 package org.ohnlp.backbone.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.schemas.Schema;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.Load;
@@ -13,12 +12,10 @@ import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+import org.ohnlp.backbone.io.util.ConfigUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -111,8 +108,13 @@ public class PipelineBuilder {
                     continue; // Non-required (or exception thrown) and no settings provided, move on to next
                 }
                 f.setAccessible(true);
-                // Use jackson to infer the value
-                Object val = om.treeToValue(curr, om.constructType(f.getGenericType()));
+                Object val;
+                if (f.getType().equals(Schema.class)) {
+                    val = ConfigUtils.resolveObjectSchema(curr);
+                } else {
+                    // Use jackson to infer the value
+                    val = om.treeToValue(curr, om.constructType(f.getGenericType()));
+                }
                 // and set the field
                 f.set(instance, val);
             }
