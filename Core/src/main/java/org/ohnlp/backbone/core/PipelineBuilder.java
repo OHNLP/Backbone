@@ -12,12 +12,12 @@ import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.core.pipeline.ExecutionDAG;
 import org.ohnlp.backbone.io.util.ConfigUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class generates an execution plan from a specified configuration instance
@@ -31,54 +31,47 @@ public class PipelineBuilder {
      * @throws ComponentInitializationException If an issue occurs loading transforms from configuration
      */
     @SuppressWarnings("rawtypes")
-    public static BackboneETLPipeline buildETLPipelineFromConfig(BackboneConfiguration config) throws ComponentInitializationException {
-        BackboneETLPipeline pipeline = new BackboneETLPipeline();
-        LinkedList<Transform> transforms = new LinkedList<>();
+    public static ExecutionDAG  getPipelineGraph(BackboneConfiguration config) throws ComponentInitializationException {
         BackbonePipelineComponentConfiguration[] configs = config.getPipeline().toArray(new BackbonePipelineComponentConfiguration[0]);
         if (configs.length < 2) {
             throw new ComponentInitializationException(new IllegalArgumentException("Pipelines must contain at a minimum a Extract and a Load"));
         }
+        // Initialize and populate mapping of component IDs to instances, as well as a list of actual extracts (root nodes)
+        List<String> extracts = new ArrayList<>();
+        Map<String, InitializedPipelineComponent> componentsByID = new HashMap<>();
         for (int i = 0; i < configs.length; i++) {
             try {
+                if (configs[i].getStepId() == null) {
+                    configs[i].setStepId(i + "");
+                }
+                if ((configs[i].getInputIds() == null || configs[i].getInputIds().isEmpty()) && i > 0) {
+                    configs[i].setInputIds(Collections.singletonList((i-1) + ""));
+                }
                 Class<? extends BackbonePipelineComponent> clazz = configs[i].getClazz();
                 Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
                 BackbonePipelineComponent instance = ctor.newInstance();
                 JsonNode configForInstance = configs[i].getConfig();
-                if (i == 0) {
-                    if (!(instance instanceof Extract)) {
-                        throw new IllegalArgumentException("Pipelines must begin with an extract operation, " +
-                                "found a " + instance.getClass().getName() + " instead!");
-                    } else {
-                        injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
-                        instance.init();
-                        pipeline.setExtract((Extract) instance);
-                    }
-                } else if (i == configs.length - 1) {
-                    if (!(instance instanceof Load)) {
-                        throw new IllegalArgumentException("Pipelines must end with a Load operation, " +
-                                "found a " + instance.getClass().getName() + " instead!");
-                    } else {
-                        injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
-                        instance.init();
-                        pipeline.setLoad((Load) instance);
-                    }
-                } else {
-                    if (!(instance instanceof Transform)) {
-                        throw new IllegalArgumentException("Intermediate pipeline operations must be transforms, found a " +
-                                instance.getClass().getName() + " instead at index " + i);
-                    } else {
-                        injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
-                        instance.init();
-                        transforms.addLast((Transform) instance);
-                    }
+                injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
+                instance.init();
+                componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputIds(), instance));
+                if (instance instanceof Extract) {
+                    extracts.add(configs[i].getStepId());
                 }
-
             } catch (Throwable t) {
                 throw new ComponentInitializationException(t);
             }
         }
-        pipeline.setTransforms(transforms);
-        return pipeline;
+        // Now add information on what each component outputs to by crossreference
+        componentsByID.forEach((id, component) -> {
+            for (String input : component.inputs) {
+                if (!componentsByID.containsKey(input)) {
+                    throw new IllegalArgumentException("Component " + id + " declares input from " + input + " that does not exist");
+                }
+                componentsByID.get(input).outputs.add(id);
+            }
+        });
+        // Now construct the actual DAG
+        return new ExecutionDAG(extracts, componentsByID);
     }
 
     private static void injectInstanceWithConfigurationProperties(
@@ -121,34 +114,50 @@ public class PipelineBuilder {
         }
     }
 
+    public static class InitializedPipelineComponent {
+        String componentID;
+        List<String> inputs;
+        List<String> outputs = new ArrayList<>();
+        BackbonePipelineComponent component;
 
-    public static class BackboneETLPipeline {
-        public Extract extract;
-        public List<Transform> transforms;
-        public Load load;
-
-        public Extract getExtract() {
-            return extract;
+        public InitializedPipelineComponent(String componentID, List<String> inputs, BackbonePipelineComponent component) {
+            this.componentID = componentID;
+            this.inputs = inputs;
+            this.component = component;
         }
 
-        public void setExtract(Extract extract) {
-            this.extract = extract;
+        public String getComponentID() {
+            return componentID;
         }
 
-        public List<Transform> getTransforms() {
-            return transforms;
+        public void setComponentID(String componentID) {
+            this.componentID = componentID;
         }
 
-        public void setTransforms(List<Transform> transforms) {
-            this.transforms = transforms;
+        public List<String> getInputs() {
+            return inputs;
         }
 
-        public Load getLoad() {
-            return load;
+        public void setInputs(List<String> inputs) {
+            this.inputs = inputs;
         }
 
-        public void setLoad(Load load) {
-            this.load = load;
+        public List<String> getOutputs() {
+            return outputs;
+        }
+
+        public void setOutputs(List<String> outputs) {
+            this.outputs = outputs;
+        }
+
+        public BackbonePipelineComponent getComponent() {
+            return component;
+        }
+
+        public void setComponent(BackbonePipelineComponent component) {
+            this.component = component;
         }
     }
+
+
 }

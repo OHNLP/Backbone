@@ -11,6 +11,7 @@ import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
+import org.ohnlp.backbone.core.pipeline.ExecutionDAG;
 
 import java.io.IOException;
 
@@ -22,24 +23,9 @@ public class BackboneRunner {
         Pipeline p = Pipeline.create(options);
         // First read in the config and create an execution plan
         BackboneConfiguration config = new ObjectMapper().readValue(BackboneRunner.class.getResourceAsStream("/configs/" + options.getConfig()), BackboneConfiguration.class);
-        PipelineBuilder.BackboneETLPipeline pipeline = PipelineBuilder.buildETLPipelineFromConfig(config);
-        // Now run in sequence
-        // - Extract
-        Schema workingSchema = pipeline.extract.calculateOutputSchema(null);
-        PCollection<Row> df = p.apply("Extract-Step-0", pipeline.extract);
-        if (workingSchema != null) {
-            df = df.setRowSchema(workingSchema).setCoder(RowCoder.of(workingSchema));
-        }
-        workingSchema = workingSchema == null ? df.getSchema() : workingSchema;
-        // - Transform
-        int i = 1;
-        for (Transform t : pipeline.transforms) {
-            workingSchema = t.calculateOutputSchema(workingSchema);
-            df = df.apply("Transform-Step-" + i++, t).setRowSchema(workingSchema).setCoder(RowCoder.of(workingSchema));
-        }
-        // - Load
-        pipeline.load.calculateOutputSchema(workingSchema);
-        POutput complete = df.apply("Load-Step-" + i++, pipeline.load);
+        ExecutionDAG graph = PipelineBuilder.getPipelineGraph(config);
+        graph.planDAG(p);
+        // Now run
         p.run().waitUntilFinish();
         // - Done
         System.out.println("Pipeline complete");
