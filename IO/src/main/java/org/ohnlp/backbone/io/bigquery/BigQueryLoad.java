@@ -1,33 +1,28 @@
 package org.ohnlp.backbone.io.bigquery;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableSchema;
-import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils;
 import org.apache.beam.sdk.schemas.Schema;
-import org.apache.beam.sdk.schemas.transforms.Select;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
-import org.joda.time.Duration;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
+@ComponentDescription(
+        name = "Load Data into Big Query",
+        desc = "Appends the input collection into a BigQuery table, or creates the table if it does not exist"
+)
 public class BigQueryLoad extends Load {
 
     @ConfigurationProperty(
             path = "dest_table",
-            desc = "The destination BigQuery table specification to connect to."
+            desc = "The destination BigQuery table specification (e.g. project_id:dataset_id.table_id) to connect to."
     )
     private String tablespec;
     private Schema writeSchema;
@@ -55,11 +50,5 @@ public class BigQueryLoad extends Load {
                         .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
         );
 
-    }
-
-    @Override
-    public Schema calculateOutputSchema(Schema input) {
-        this.writeSchema = input;
-        return input;
     }
 }

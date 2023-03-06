@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.transforms.rows;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.transforms.AddFields;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -11,7 +10,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.transforms.OneToOneTransform;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.xml.sax.SAXException;
@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,7 +42,11 @@ import java.util.List;
  *     }
  * </pre>
  */
-public class EncodedToPlainTextTransform extends Transform {
+@ComponentDescription(
+        name = "Decode rich text formats (e.g. RTF, DOCX, etc.) to plaintext",
+        desc = "Uses Apache Tika's AutoDetectParser to naively transform rich text formats into plaintext"
+)
+public class EncodedToPlainTextTransform extends OneToOneTransform {
 
     @ConfigurationProperty(
             path = "input",
@@ -50,12 +55,17 @@ public class EncodedToPlainTextTransform extends Transform {
     private String inputField;
     @ConfigurationProperty(
             path = "output",
-            desc = "Field into which to place decoded plaintext"
+            desc = "Field into which to place decoded plaintext. Can be same as inputField for in-place replacement"
     )
     private String outputField;
 
     @Override
     public void init() throws ComponentInitializationException {
+    }
+
+    @Override
+    public List<String> getOutputTags() {
+        return Collections.singletonList("plaintext-" + inputField);
     }
 
     @Override

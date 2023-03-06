@@ -9,6 +9,7 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.bson.Document;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
@@ -31,6 +32,10 @@ import java.util.ArrayList;
  * <p>
  * For full listing of possible URI formats, please consult <a href="https://www.mongodb.com/docs/manual/reference/connection-string/">MongoDB Documentation</a>
  */
+@ComponentDescription(
+        name = "Writes Records into MongoDB",
+        desc = "Writes Records into MongoDB. An optional list of fields to subset can also be provided."
+)
 public class MongoDBLoad extends Load {
     @ConfigurationProperty(
             path = "uri",

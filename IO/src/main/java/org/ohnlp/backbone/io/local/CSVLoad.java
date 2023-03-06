@@ -8,6 +8,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowHeaderToCSVEncoding;
@@ -33,6 +34,12 @@ import java.util.List;
  *     }
  * </pre>
  */
+@ComponentDescription(
+        name = "Write Data as Comma-Delimited File",
+        desc = "Writes records to a file system directory in CSV format. One file is created per partition. " +
+                "This component is intended for debugging use in local mode only - no guarantees are made about " +
+                "functionality in other environments"
+)
 public class CSVLoad extends Load {
     @ConfigurationProperty(
             path = "fileSystemPath",

@@ -1,11 +1,13 @@
 package org.ohnlp.backbone.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PInput;
 import org.apache.beam.sdk.values.POutput;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a configurable pipeline component used in the OHNLP backbone
@@ -23,5 +25,4 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      */
     public abstract void init() throws ComponentInitializationException;
 
-    public abstract Schema calculateOutputSchema(Schema input);
 }

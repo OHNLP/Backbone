@@ -18,9 +18,9 @@ public class BackbonePipelineComponentConfiguration {
     private String stepId;
 
     /**
-     * IDs for input step. Defaults to a single input at (numeric index - 1)
+     * IDs for input step.
      */
-    private List<String> inputIds;
+    private List<InputDefinition> inputs;
 
     /**
      * The class of the pipeline component, should extend {@link BackbonePipelineComponent}
@@ -39,12 +39,12 @@ public class BackbonePipelineComponentConfiguration {
         this.stepId = stepId;
     }
 
-    public List<String> getInputIds() {
-        return inputIds;
+    public List<InputDefinition> getInputs() {
+        return inputs;
     }
 
-    public void setInputIds(List<String> inputIds) {
-        this.inputIds = inputIds;
+    public void setInputs(List<InputDefinition> inputIds) {
+        this.inputs = inputIds;
     }
 
     public Class<? extends BackbonePipelineComponent> getClazz() {
@@ -61,5 +61,27 @@ public class BackbonePipelineComponentConfiguration {
 
     public void setConfig(JsonNode config) {
         this.config = config;
+    }
+
+
+    public static class InputDefinition {
+        String componentID;
+        String inputTag;
+
+        public String getComponentID() {
+            return componentID;
+        }
+
+        public void setComponentID(String componentID) {
+            this.componentID = componentID;
+        }
+
+        public String getInputTag() {
+            return inputTag;
+        }
+
+        public void setInputTag(String inputTag) {
+            this.inputTag = inputTag;
+        }
     }
 }

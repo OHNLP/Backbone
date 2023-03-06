@@ -7,14 +7,18 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Reads in records from a file system directory.
@@ -31,6 +35,10 @@ import java.util.List;
  *     }
  * </pre>
  */
+@ComponentDescription(
+        name = "Read Records from Filesystem",
+        desc = "Reads Records from a Directory, populating recordIDField with the file name and recordBodyField with the raw textual contents"
+)
 public class FileSystemExtract extends Extract {
 
     private FileIO.Match fileIterator;
@@ -61,14 +69,20 @@ public class FileSystemExtract extends Extract {
     }
 
     @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return this.rowSchema;
+    public List<String> getOutputTags() {
+        return Collections.singletonList("Filesystem Records");
     }
 
     @Override
-    public PCollection<Row> expand(PBegin input) {
+    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+        return Collections.singletonMap(getOutputTags().get(0), this.rowSchema);
+    }
+
+    @Override
+    public PCollectionRowTuple expand(PBegin input) {
         PCollection<MatchResult.Metadata> records = this.fileIterator.expand(input);
-        return records
+        return PCollectionRowTuple.of(getOutputTags().get(0),
+                records
                 // TODO support recursion
                 .apply(FileIO.readMatches().withDirectoryTreatment(FileIO.ReadMatches.DirectoryTreatment.SKIP))
                 .apply(ParDo.of(new DoFn<FileIO.ReadableFile, Row>() {
@@ -81,7 +95,9 @@ public class FileSystemExtract extends Extract {
                                 .withFieldValue(recordBodyField, content)
                                 .build());
                     }
-                }));
+                })
+                ).setRowSchema(this.rowSchema)
+        );
     }
 
 }

@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.schemas.Schema;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 import org.ohnlp.backbone.api.Extract;
-import org.ohnlp.backbone.api.Load;
-import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
@@ -53,7 +51,7 @@ public class PipelineBuilder {
                 JsonNode configForInstance = configs[i].getConfig();
                 injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
                 instance.init();
-                componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputIds(), instance));
+                componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputs(), instance));
                 if (instance instanceof Extract) {
                     extracts.add(configs[i].getStepId());
                 }
@@ -116,11 +114,11 @@ public class PipelineBuilder {
 
     public static class InitializedPipelineComponent {
         String componentID;
-        List<String> inputs;
+        List<BackbonePipelineComponentConfiguration.InputDefinition> inputs;
         List<String> outputs = new ArrayList<>();
         BackbonePipelineComponent component;
 
-        public InitializedPipelineComponent(String componentID, List<String> inputs, BackbonePipelineComponent component) {
+        public InitializedPipelineComponent(String componentID, List<BackbonePipelineComponentConfiguration.InputDefinition> inputs, BackbonePipelineComponent component) {
             this.componentID = componentID;
             this.inputs = inputs;
             this.component = component;
@@ -134,11 +132,11 @@ public class PipelineBuilder {
             this.componentID = componentID;
         }
 
-        public List<String> getInputs() {
+        public List<BackbonePipelineComponentConfiguration.InputDefinition> getInputs() {
             return inputs;
         }
 
-        public void setInputs(List<String> inputs) {
+        public void setInputs(List<BackbonePipelineComponentConfiguration.InputDefinition> inputs) {
             this.inputs = inputs;
         }
 
@@ -158,6 +156,5 @@ public class PipelineBuilder {
             this.component = component;
         }
     }
-
 
 }

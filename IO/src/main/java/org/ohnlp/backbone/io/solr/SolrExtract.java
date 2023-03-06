@@ -7,11 +7,17 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.apache.solr.common.SolrDocument;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Reads in documents from Solr
@@ -31,6 +37,10 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
  */
 // TODO currently input is limited strictly to three fields, make this more flexible
 // Most likely possibility is to see a schema.xml as input
+@ComponentDescription(
+        name = "Read Records from Solr",
+        desc = "Reads Records from Solr. Note that this is currently limited to strictly two fields (note_id/txt)"
+)
 public class SolrExtract extends Extract {
     @ConfigurationProperty(
             path = "host",
@@ -48,7 +58,7 @@ public class SolrExtract extends Extract {
             desc = "The Solr password or NONE if no credentials needed",
             required = false
     )
-    private String pass;
+    private String pass = "NONE";
     @ConfigurationProperty(
             path = "collection",
             desc = "The Solr collection to retrieve from"
@@ -69,20 +79,28 @@ public class SolrExtract extends Extract {
             desc = "The field to use as document text"
     )
     private String docTextField;
+    private Schema schema; // TODO switch to using this as input instead
 
     @Override
     public void init() throws ComponentInitializationException {
     }
 
     @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return Schema.builder()
-                .addStringField("note_id")
-                .addStringField("note_text").build();
+    public List<String> getOutputTags() {
+        return Collections.singletonList("Solr Records: " + this.collection);
     }
 
     @Override
-    public PCollection<Row> expand(PBegin input) {
+    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+        this.schema = Schema.builder()
+                .addStringField("note_id")
+                .addStringField("note_text").build();
+        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+    }
+
+
+    @Override
+    public PCollectionRowTuple expand(PBegin input) {
         Schema rowSchema = Schema.builder()
                 .addStringField("note_id")
                 .addStringField("note_text").build();
@@ -90,7 +108,9 @@ public class SolrExtract extends Extract {
         if (!user.equals("NONE")) {
             config = config.withBasicCredentials(user, pass);
         }
-        return SolrIO
+        return PCollectionRowTuple.of(
+                getOutputTags().get(0),
+                SolrIO
                 .read()
                 .withConnectionConfiguration(config)
                 .withQuery(this.query)
@@ -103,6 +123,7 @@ public class SolrExtract extends Extract {
                                 input.getFieldValue(docIdField),
                                 input.getFieldValue(docTextField)).build());
                     }
-                }));
+                }))
+                .setRowSchema(schema));
     }
 }

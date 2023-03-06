@@ -7,11 +7,9 @@ import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.io.jdbc.SchemaUtilProxy;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.Create;
-import org.apache.beam.sdk.values.KV;
-import org.apache.beam.sdk.values.PBegin;
-import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.Row;
+import org.apache.beam.sdk.values.*;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
@@ -23,6 +21,12 @@ import java.util.*;
  * This class uses {@link JdbcIO} included with Apache Beam to execute parallelized retrieval queries
  * using offsets for pagination.
  */
+@ComponentDescription(
+        name = "Read Records from a JDBC-compatible data source",
+        desc = "Reads Records from a JDBC-compatible data source using a SQL query. Any queries should ideally " +
+                "include an indexed identifier column that can be used to rapidly paginate/partition results for " +
+                "parallelized processing"
+)
 public class JDBCExtract extends Extract {
     @ConfigurationProperty(
             path = "url",
@@ -51,7 +55,7 @@ public class JDBCExtract extends Extract {
     private String query;
     @ConfigurationProperty(
             path = "batch_size",
-            desc = "Approximate number of documents per batch/partition. Lower this is running into memory issues.",
+            desc = "Approximate number of documents per batch/partition. Lower this if running into memory issues.",
             required = false
     )
     private int batchSize = 1000;
@@ -75,6 +79,7 @@ public class JDBCExtract extends Extract {
     private String[] orderByCols;
     private String viewName;
     private String orderedQuery;
+    private Schema schema;
 
     /**
      * Initializes a Beam JdbcIO Provider
@@ -92,7 +97,7 @@ public class JDBCExtract extends Extract {
      *         "identifier_col": "column_with_identifier_values"
      *     }
      * </pre>
-     *
+     * <p>
      * By default, batch_size and identifier_col are optional but are highly recommended as the defaults may
      * not be optimal for performance
      *
@@ -122,7 +127,7 @@ public class JDBCExtract extends Extract {
                 ResultSet rs = conn.createStatement().executeQuery(countQuery);
                 rs.next();
                 int resultCount = rs.getInt(1);
-                this.numBatches = Math.round(Math.ceil((double)resultCount/this.batchSize));
+                this.numBatches = Math.round(Math.ceil((double) resultCount / this.batchSize));
             }
             // Normally I would say use Strings.join for the below, but this was causing cross-jvm issues
             // so we use the more portable stringbuilder instead...
@@ -141,7 +146,7 @@ public class JDBCExtract extends Extract {
             // Specifically, postgres and MySQL are special in that they do not conform to the
             // SQL:2011 standard syntax
             if (driver.equals("org.postgresql.Driver") || driver.equals("com.mysql.jdbc.Driver")
-                || driver.equals("com.mysql.cj.jdbc.Driver") || driver.equals("org.sqlite.JDBC")) {
+                    || driver.equals("com.mysql.cj.jdbc.Driver") || driver.equals("org.sqlite.JDBC")) {
                 this.orderedQuery += "LIMIT " + batchSize + " OFFSET ?";
             } else { // This is the SQL:2011 standard definition of an offset...fetch syntax
                 this.orderedQuery += "OFFSET ? ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
@@ -152,8 +157,21 @@ public class JDBCExtract extends Extract {
     }
 
     @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return null;
+    public List<String> getOutputTags() {
+        return Collections.singletonList("JDBC Results");
+    }
+
+    @Override
+    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+        Schema schema;
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(this.query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            schema = SchemaUtilProxy.toBeamSchema(driver, ps.getMetaData());
+        } catch (SQLException throwables) {
+            throw new RuntimeException(throwables);
+        }
+        this.schema = schema;
+        return Collections.singletonMap(getOutputTags().get(0), this.schema);
     }
 
     private String[] findPaginationOrderingColumns(String query) throws ComponentInitializationException {
@@ -171,10 +189,10 @@ public class JDBCExtract extends Extract {
                 if (!colNameToIndex.containsKey(this.identifierCol)) {
                     throw new ComponentInitializationException(
                             new IllegalArgumentException("The supplied identifier_col " + this.identifierCol + " " +
-                            "does not exist in the returned query results. Available columns: " +
-                            Arrays.toString(colNameToIndex.keySet().toArray(new String[0]))));
+                                    "does not exist in the returned query results. Available columns: " +
+                                    Arrays.toString(colNameToIndex.keySet().toArray(new String[0]))));
                 }
-                return new String[] {this.identifierCol};
+                return new String[]{this.identifierCol};
             } else {
                 // User did not supply an identifier column, so instead we will concatenate by column index so that
                 // ordering is done for all columns...
@@ -192,31 +210,26 @@ public class JDBCExtract extends Extract {
 
     }
 
-    public PCollection<Row> expand(PBegin input) {
+    public PCollectionRowTuple expand(PBegin input) {
         List<Integer> offsets = new ArrayList<>();
         for (int i = 0; i < numBatches; i++) {
             offsets.add(i * batchSize); // Create a sequence of batches at the appropriate offset
         }
-        Schema schema;
-        try (Connection conn = ds.getConnection();
-                PreparedStatement ps = conn.prepareStatement(this.query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-            schema = SchemaUtilProxy.toBeamSchema(driver, ps.getMetaData());
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables);
-        }
-        return input.apply("JDBC Preflight", Create.of(offsets)) // First create partitions # = to num batches
-                .apply("JDBC Read", // Now actually do the read, the readall function will execute one query per input partition
-                        JdbcIO.<Integer, Row>readAll()
-                                .withDataSourceConfiguration(datasourceConfig)
-                                .withQuery(this.orderedQuery)
-                        .withRowMapper(this.driver.equals("org.sqlite.JDBC") ?
-                                new SchemaUtilProxy.SQLiteBeamRowMapperProxy(schema) :
-                                new SchemaUtilProxy.BeamRowMapperProxy(schema))
-                        .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
-                            preparedStatement.setInt(1, element); // Replace
-                        })
-                        .withCoder(RowCoder.of(schema))
-                        .withOutputParallelization(false)
-                );
+        return PCollectionRowTuple.of(
+                getOutputTags().get(0),
+                input.apply("JDBC Preflight", Create.of(offsets)) // First create partitions # = to num batches
+                        .apply("JDBC Read", // Now actually do the read, the readall function will execute one query per input partition
+                                JdbcIO.<Integer, Row>readAll()
+                                        .withDataSourceConfiguration(datasourceConfig)
+                                        .withQuery(this.orderedQuery)
+                                        .withRowMapper(this.driver.equals("org.sqlite.JDBC") ?
+                                                new SchemaUtilProxy.SQLiteBeamRowMapperProxy(schema) :
+                                                new SchemaUtilProxy.BeamRowMapperProxy(schema))
+                                        .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
+                                            preparedStatement.setInt(1, element); // Replace
+                                        })
+                                        .withCoder(RowCoder.of(schema))
+                                        .withOutputParallelization(false)
+                        ));
     }
 }

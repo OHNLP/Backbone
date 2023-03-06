@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.io.bigquery;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.services.bigquery.model.TableRow;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils;
@@ -9,15 +8,21 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
-import org.ohnlp.backbone.io.mongodb.MongoDBExtract;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
+@ComponentDescription(
+        name = "Extract Data from Big Query",
+        desc = "Retrieves data from big query either via query or from an entire table specification with a 1:1 column name mapping"
+)
 public class BigQueryExtract extends Extract {
     @ConfigurationProperty(
             path = "query",
@@ -27,7 +32,7 @@ public class BigQueryExtract extends Extract {
 
     @ConfigurationProperty(
             path = "schema",
-            desc = "The schema of the input data"
+            desc = "The schema of the input data. Should match either the table spec or the query output if used"
     )
     private Schema schema;
 
@@ -36,13 +41,20 @@ public class BigQueryExtract extends Extract {
     }
 
     @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return this.schema;
+    public List<String> getOutputTags() {
+        return Collections.singletonList("BigQuery Results");
     }
 
     @Override
-    public PCollection<Row> expand(PBegin input) {
-        return input.apply("Read From BigQuery", BigQueryIO.readTableRows().fromQuery(this.query))
+    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+    }
+
+    @Override
+    public PCollectionRowTuple expand(PBegin input) {
+        return PCollectionRowTuple.of(
+                getOutputTags().get(0),
+                input.apply("Read From BigQuery", BigQueryIO.readTableRows().fromQuery(this.query))
                 .apply("Convert BigQuery TableRows to Beam Rows", ParDo.of(
                         new DoFn<TableRow, Row>() {
                             @ProcessElement
@@ -50,6 +62,6 @@ public class BigQueryExtract extends Extract {
                                 out.output(BigQueryUtils.toBeamRow(schema, input));
                             }
                         }
-                ));
+                )).setRowSchema(this.schema));
     }
 }

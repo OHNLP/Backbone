@@ -10,12 +10,14 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.joda.time.DateTime;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
@@ -47,11 +49,14 @@ import java.util.stream.Collectors;
  * For full listing of possible URI formats, please consult <a href="https://www.mongodb.com/docs/manual/reference/connection-string/">MongoDB Documentation</a>
  * <br/>
  * Schema corresponds to the schema of the input document <br/>
- * Accepted TYPEs are BOOLEAN, DATE, DOUBLE, INTEGER, LONG, STRING, and OBJECT_ID
  * <br/>
- * Note that embedded object will be flattened in the output row structure, e.g. values located under field3 can be
- * referred to using "complex_field1.field3" further on down the pipeline
  */
+@ComponentDescription(
+        name = "Read Records from a MongoDB datasource",
+        desc = "Reads Records from a MongoDB Data source. Allowing disk spillover of query sorting is highly recommended. " +
+                "A schema corresponding to that of the input documents must be supplied. " +
+                "An aggregate pipeline can optionally be supplied as well to act as a filter/preprocessing step."
+)
 public class MongoDBExtract extends Extract {
     @ConfigurationProperty(
             path = "uri",
@@ -92,6 +97,16 @@ public class MongoDBExtract extends Extract {
         }
     }
 
+    @Override
+    public List<String> getOutputTags() {
+        return Collections.singletonList("MongoDB Records: " + collection);
+    }
+
+    @Override
+    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+    }
+
     private void parseSchema(Schema.Field field, LinkedList<String> pathQue) {
         pathQue.add(field.getName());
         Schema.FieldType type;
@@ -115,12 +130,7 @@ public class MongoDBExtract extends Extract {
     }
 
     @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return this.schema;
-    }
-
-    @Override
-    public PCollection<Row> expand(PBegin input) {
+    public PCollectionRowTuple expand(PBegin input) {
         MongoDbIO.Read readFn = MongoDbIO.read()
                 .withUri(this.uri)
                 .withDatabase(this.database)
@@ -132,46 +142,48 @@ public class MongoDBExtract extends Extract {
                             this.filter.stream().map(BsonDocument::parse)
                                     .collect(Collectors.toCollection(ArrayList::new))));
         }
-        return input.apply("MongoDB Read", readFn)
-                .apply("Convert MongoDB Document to Row", ParDo.of(new DoFn<Document, Row>() {
-                    @ProcessElement
-                    public void processElement(@Element Document input, OutputReceiver<Row> out) {
-                        List<Object> vals = new ArrayList<>();
-                        mappings.forEach(e -> {
-                            LinkedList<String> path = new LinkedList<>(e.getKey());
-                            PrimitiveType type = e.getType();
-                            Object curr = input;
-                            String fieldName = path.removeFirst();
-                            while (!path.isEmpty()) {
-                                curr = ((Document) curr).get(fieldName);
+        return PCollectionRowTuple.of(
+                getOutputTags().get(0),
+                input.apply("MongoDB Read", readFn)
+                        .apply("Convert MongoDB Document to Row", ParDo.of(new DoFn<Document, Row>() {
+                            @ProcessElement
+                            public void processElement(@Element Document input, OutputReceiver<Row> out) {
+                                List<Object> vals = new ArrayList<>();
+                                mappings.forEach(e -> {
+                                    LinkedList<String> path = new LinkedList<>(e.getKey());
+                                    PrimitiveType type = e.getType();
+                                    Object curr = input;
+                                    String fieldName = path.removeFirst();
+                                    while (!path.isEmpty()) {
+                                        curr = ((Document) curr).get(fieldName);
+                                    }
+                                    switch (type) {
+                                        case BOOLEAN:
+                                            vals.add(((Document) curr).getBoolean(fieldName));
+                                            break;
+                                        case DATE:
+                                            vals.add(new DateTime(((Document) curr).getDate(fieldName)));
+                                            break;
+                                        case DOUBLE:
+                                            vals.add(((Document) curr).getDouble(fieldName));
+                                            break;
+                                        case INTEGER:
+                                            vals.add(((Document) curr).getInteger(fieldName));
+                                            break;
+                                        case LONG:
+                                            vals.add(((Document) curr).getLong(fieldName));
+                                            break;
+                                        case STRING:
+                                            vals.add(((Document) curr).getString(fieldName));
+                                            break;
+                                        case OBJECT_ID:
+                                            vals.add(((Document) curr).getObjectId(fieldName).toHexString());
+                                            break;
+                                    }
+                                });
+                                out.output(Row.withSchema(schema).addValues(vals).build());
                             }
-                            switch (type) {
-                                case BOOLEAN:
-                                    vals.add(((Document) curr).getBoolean(fieldName));
-                                    break;
-                                case DATE:
-                                    vals.add(new DateTime(((Document) curr).getDate(fieldName)));
-                                    break;
-                                case DOUBLE:
-                                    vals.add(((Document) curr).getDouble(fieldName));
-                                    break;
-                                case INTEGER:
-                                    vals.add(((Document) curr).getInteger(fieldName));
-                                    break;
-                                case LONG:
-                                    vals.add(((Document) curr).getLong(fieldName));
-                                    break;
-                                case STRING:
-                                    vals.add(((Document) curr).getString(fieldName));
-                                    break;
-                                case OBJECT_ID:
-                                    vals.add(((Document) curr).getObjectId(fieldName).toHexString());
-                                    break;
-                            }
-                        });
-                        out.output(Row.withSchema(schema).addValues(vals).build());
-                    }
-                }));
+                        })).setRowSchema(schema));
     }
 
     public enum PrimitiveType {
@@ -184,6 +196,7 @@ public class MongoDBExtract extends Extract {
         OBJECT_ID(Schema.FieldType.of(Schema.TypeName.STRING));
 
         private static Map<Schema.FieldType, PrimitiveType> fieldTypeToPrimitiveTypeMap = new HashMap<>();
+
         static {
             for (PrimitiveType type : PrimitiveType.values()) {
                 fieldTypeToPrimitiveTypeMap.put(type.beamType, type);

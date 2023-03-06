@@ -12,6 +12,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
@@ -26,6 +27,11 @@ import java.util.ArrayList;
  *     "fields": ["optional", "list", "of", "columns", "to", "write"]
  * }
  */
+@ComponentDescription(
+        name = "Write Parquet Records into Filesystem",
+        desc = "Writes parquet records into a specified filesystem. One file will be created per partition/batch. " +
+                "An optional list of columns to subset for output can be supplied."
+)
 public class ParquetLoad extends Load {
 
     @ConfigurationProperty(

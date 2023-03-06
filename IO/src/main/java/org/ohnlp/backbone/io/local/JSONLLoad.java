@@ -8,6 +8,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
@@ -30,6 +31,11 @@ import java.util.List;
  *     }
  * </pre>
  */
+@ComponentDescription(
+        name = "Writes Records as JSON",
+        desc = "Writes records as JSON, with records separated by newlines. Each partition will generate a separate file. " +
+                "An optional array of fields to subset for inclusion can also be supplied."
+)
 public class JSONLLoad extends Load {
 
     @ConfigurationProperty(

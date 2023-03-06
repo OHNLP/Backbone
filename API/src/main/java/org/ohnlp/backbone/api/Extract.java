@@ -1,8 +1,7 @@
 package org.ohnlp.backbone.api;
 
-import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PBegin;
-import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 
 /**
@@ -10,5 +9,5 @@ import org.apache.beam.sdk.values.Row;
  *
  * It is expected that implementations will always output in Beam {@link Row} format
  */
-public abstract class Extract extends BackbonePipelineComponent<PBegin, PCollection<Row>> {
+public abstract class Extract extends BackbonePipelineComponent<PBegin, PCollectionRowTuple> implements HasOutputs {
 }

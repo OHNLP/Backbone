@@ -13,8 +13,4 @@ import org.apache.beam.sdk.values.Row;
  * It is assumed that data will be transformed into beam {@link Row}s prior to this step
  */
 public abstract class Load extends BackbonePipelineComponent<PCollection<Row>, POutput> {
-    @Override
-    public Schema calculateOutputSchema(Schema input) {
-        return input;
-    }
 }
