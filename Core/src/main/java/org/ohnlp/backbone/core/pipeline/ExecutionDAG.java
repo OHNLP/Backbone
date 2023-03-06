@@ -7,10 +7,7 @@ import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.POutput;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.Load;
-import org.ohnlp.backbone.api.components.LoadComponent;
-import org.ohnlp.backbone.api.components.OneToOneTransform;
-import org.ohnlp.backbone.api.components.SingleInputComponent;
-import org.ohnlp.backbone.api.components.TransformComponent;
+import org.ohnlp.backbone.api.components.*;
 import org.ohnlp.backbone.core.PipelineBuilder;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
 
@@ -35,7 +32,7 @@ public class ExecutionDAG {
         for (String extractID : extracts) {
             PBegin start = PBegin.in(pipeline);
             PipelineBuilder.InitializedPipelineComponent componentMeta = componentsByID.get(extractID);
-            Extract extract = (Extract) componentMeta.getComponent();
+            ExtractComponent extract = (ExtractComponent) componentMeta.getComponent();
             Map<String, Schema> out = extract.calculateOutputSchema(null);
             PCollectionRowTuple df = start.apply("Step-" + extractID, extract);
             for (String tag : out.keySet()) {

@@ -8,6 +8,7 @@ import org.ohnlp.backbone.api.BackbonePipelineComponent;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractComponent;
+import org.ohnlp.backbone.api.components.UsesLegacyConfigInit;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
@@ -62,8 +63,12 @@ public class PipelineBuilder {
                 Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
                 BackbonePipelineComponent instance = ctor.newInstance();
                 JsonNode configForInstance = configs[i].getConfig();
-                injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
-                instance.init();
+                if (instance instanceof UsesLegacyConfigInit) {
+                    ((UsesLegacyConfigInit)instance).initFromConfig(configs[i].getConfig());
+                } else {
+                    injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
+                    instance.init();
+                }
                 componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputs(), instance));
                 if (instance instanceof ExtractComponent) {
                     extracts.add(configs[i].getStepId());
@@ -135,7 +140,7 @@ public class PipelineBuilder {
                 Map<String, BackbonePipelineComponentConfiguration.InputDefinition> inputs,
                 BackbonePipelineComponent component) {
             this.componentID = componentID;
-            this.inputs = inputs;
+            this.inputs = inputs == null ? new HashMap<>() : inputs;
             this.component = component;
         }
 
