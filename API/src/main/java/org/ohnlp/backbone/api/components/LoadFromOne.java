@@ -1,12 +1,14 @@
 package org.ohnlp.backbone.api.components;
 
-import org.apache.beam.sdk.values.*;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
+import org.apache.beam.sdk.values.POutput;
+import org.apache.beam.sdk.values.Row;
 
 import java.util.Collections;
 import java.util.List;
 
-public abstract class LoadFromOne extends BackbonePipelineComponent<PCollectionRowTuple, POutput> implements HasInputs{
+public abstract class LoadFromOne extends LoadComponent implements SingleInputComponent {
 
     @Override
     public POutput expand(PCollectionRowTuple input) {

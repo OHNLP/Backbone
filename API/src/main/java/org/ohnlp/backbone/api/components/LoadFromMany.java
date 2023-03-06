@@ -1,8 +1,4 @@
 package org.ohnlp.backbone.api.components;
 
-import org.apache.beam.sdk.values.PCollectionRowTuple;
-import org.apache.beam.sdk.values.POutput;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
-
-public abstract class LoadFromMany extends BackbonePipelineComponent<PCollectionRowTuple, POutput> implements HasInputs {
+public abstract class LoadFromMany extends LoadComponent {
 }

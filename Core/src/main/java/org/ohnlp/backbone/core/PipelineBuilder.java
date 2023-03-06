@@ -7,6 +7,7 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.ExtractComponent;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
@@ -16,11 +17,15 @@ import org.ohnlp.backbone.io.util.ConfigUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * This class generates an execution plan from a specified configuration instance
  */
 public class PipelineBuilder {
+
+    private static final Logger LOGGER = Logger.getLogger(PipelineBuilder.class.getName());
+
     /**
      * Builds an executable pipeline from a specified {@link BackboneConfiguration}
      *
@@ -29,7 +34,7 @@ public class PipelineBuilder {
      * @throws ComponentInitializationException If an issue occurs loading transforms from configuration
      */
     @SuppressWarnings("rawtypes")
-    public static ExecutionDAG  getPipelineGraph(BackboneConfiguration config) throws ComponentInitializationException {
+    public static ExecutionDAG getPipelineGraph(BackboneConfiguration config) throws ComponentInitializationException {
         BackbonePipelineComponentConfiguration[] configs = config.getPipeline().toArray(new BackbonePipelineComponentConfiguration[0]);
         if (configs.length < 2) {
             throw new ComponentInitializationException(new IllegalArgumentException("Pipelines must contain at a minimum a Extract and a Load"));
@@ -42,8 +47,16 @@ public class PipelineBuilder {
                 if (configs[i].getStepId() == null) {
                     configs[i].setStepId(i + "");
                 }
-                if ((configs[i].getInputIds() == null || configs[i].getInputIds().isEmpty()) && i > 0) {
-                    configs[i].setInputIds(Collections.singletonList((i-1) + ""));
+                if ((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) {
+                    LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
+                            "used with a Backbone v3.0+ installation. Input/Output associations between " +
+                            "different components are being inferred. Running the configuration update script " +
+                            "is strongly recommended for stability and to verify result correctness");
+                    BackbonePipelineComponentConfiguration.InputDefinition generatedDef
+                            = new BackbonePipelineComponentConfiguration.InputDefinition();
+                    generatedDef.setComponentID((i - 1) + "");
+                    generatedDef.setInputTag("*");
+                    configs[i].setInputs(Collections.singletonMap("*", generatedDef));
                 }
                 Class<? extends BackbonePipelineComponent> clazz = configs[i].getClazz();
                 Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
@@ -52,7 +65,7 @@ public class PipelineBuilder {
                 injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
                 instance.init();
                 componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputs(), instance));
-                if (instance instanceof Extract) {
+                if (instance instanceof ExtractComponent) {
                     extracts.add(configs[i].getStepId());
                 }
             } catch (Throwable t) {
@@ -61,12 +74,12 @@ public class PipelineBuilder {
         }
         // Now add information on what each component outputs to by crossreference
         componentsByID.forEach((id, component) -> {
-            for (String input : component.inputs) {
-                if (!componentsByID.containsKey(input)) {
-                    throw new IllegalArgumentException("Component " + id + " declares input from " + input + " that does not exist");
+            component.inputs.forEach((componentTag, inputDef) -> {
+                if (!componentsByID.containsKey(inputDef.getComponentID())) {
+                    throw new IllegalArgumentException("Component " + id + " declares input from " + inputDef.getComponentID() + " that does not exist");
                 }
-                componentsByID.get(input).outputs.add(id);
-            }
+                componentsByID.get(inputDef.getComponentID()).outputs.add(id);
+            });
         });
         // Now construct the actual DAG
         return new ExecutionDAG(extracts, componentsByID);
@@ -88,8 +101,7 @@ public class PipelineBuilder {
                     } else {
                         if (configSettings.required()) {
                             throw new IllegalArgumentException("Config setting " + configSettings.path() + " is required but not provided for " + clazz.getName() + " config");
-                        }
-                        else {
+                        } else {
                             curr = null;
                             break;
                         }
@@ -114,11 +126,14 @@ public class PipelineBuilder {
 
     public static class InitializedPipelineComponent {
         String componentID;
-        List<BackbonePipelineComponentConfiguration.InputDefinition> inputs;
+        Map<String, BackbonePipelineComponentConfiguration.InputDefinition> inputs;
         List<String> outputs = new ArrayList<>();
         BackbonePipelineComponent component;
 
-        public InitializedPipelineComponent(String componentID, List<BackbonePipelineComponentConfiguration.InputDefinition> inputs, BackbonePipelineComponent component) {
+        public InitializedPipelineComponent(
+                String componentID,
+                Map<String, BackbonePipelineComponentConfiguration.InputDefinition> inputs,
+                BackbonePipelineComponent component) {
             this.componentID = componentID;
             this.inputs = inputs;
             this.component = component;
@@ -132,11 +147,11 @@ public class PipelineBuilder {
             this.componentID = componentID;
         }
 
-        public List<BackbonePipelineComponentConfiguration.InputDefinition> getInputs() {
+        public Map<String, BackbonePipelineComponentConfiguration.InputDefinition> getInputs() {
             return inputs;
         }
 
-        public void setInputs(List<BackbonePipelineComponentConfiguration.InputDefinition> inputs) {
+        public void setInputs(Map<String, BackbonePipelineComponentConfiguration.InputDefinition> inputs) {
             this.inputs = inputs;
         }
 

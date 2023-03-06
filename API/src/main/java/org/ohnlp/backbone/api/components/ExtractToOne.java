@@ -1,14 +1,16 @@
 package org.ohnlp.backbone.api.components;
 
 import org.apache.beam.sdk.schemas.Schema;
-import org.apache.beam.sdk.values.*;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
+import org.apache.beam.sdk.values.PBegin;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionRowTuple;
+import org.apache.beam.sdk.values.Row;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ExtractToOne extends BackbonePipelineComponent<PBegin, PCollectionRowTuple> implements HasOutputs {
+public abstract class ExtractToOne extends ExtractComponent implements SingleOutputComponent {
 
     @Override
     public final PCollectionRowTuple expand(PBegin input) {

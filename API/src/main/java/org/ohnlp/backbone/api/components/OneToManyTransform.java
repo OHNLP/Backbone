@@ -4,12 +4,10 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
 import java.util.Map;
 
-public abstract class OneToManyTransform extends BackbonePipelineComponent<PCollectionRowTuple, PCollectionRowTuple>
-        implements HasInputs, HasOutputs {
+public abstract class OneToManyTransform extends TransformComponent implements SingleInputComponent {
 
     @Override
     public PCollectionRowTuple expand(PCollectionRowTuple input) {

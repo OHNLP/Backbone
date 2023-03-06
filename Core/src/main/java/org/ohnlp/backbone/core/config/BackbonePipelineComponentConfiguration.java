@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a declaration and associated configuration of a specific pipeline component.
@@ -18,9 +19,9 @@ public class BackbonePipelineComponentConfiguration {
     private String stepId;
 
     /**
-     * IDs for input step.
+     * Input mappings
      */
-    private List<InputDefinition> inputs;
+    private  Map<String, InputDefinition>  inputs;
 
     /**
      * The class of the pipeline component, should extend {@link BackbonePipelineComponent}
@@ -39,12 +40,12 @@ public class BackbonePipelineComponentConfiguration {
         this.stepId = stepId;
     }
 
-    public List<InputDefinition> getInputs() {
+    public Map<String, InputDefinition> getInputs() {
         return inputs;
     }
 
-    public void setInputs(List<InputDefinition> inputIds) {
-        this.inputs = inputIds;
+    public void setInputs( Map<String, InputDefinition>  inputs) {
+        this.inputs = inputs;
     }
 
     public Class<? extends BackbonePipelineComponent> getClazz() {
@@ -68,7 +69,6 @@ public class BackbonePipelineComponentConfiguration {
     public static class InputDefinition {
         String componentID;
         String inputTag;
-        String outputTag;
 
         public String getComponentID() {
             return componentID;
@@ -84,14 +84,6 @@ public class BackbonePipelineComponentConfiguration {
 
         public void setInputTag(String inputTag) {
             this.inputTag = inputTag;
-        }
-
-        public String getOutputTag() {
-            return outputTag;
-        }
-
-        public void setOutputTag(String outputTag) {
-            this.outputTag = outputTag;
         }
     }
 }

@@ -4,19 +4,17 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ManyToOneTransform extends BackbonePipelineComponent<PCollectionRowTuple, PCollectionRowTuple>
-        implements HasInputs, HasOutputs {
+public abstract class ManyToOneTransform extends TransformComponent implements SingleOutputComponent {
 
     @Override
     public PCollectionRowTuple expand(PCollectionRowTuple input) {
         PCollectionRowTuple output = PCollectionRowTuple.empty(input.getPipeline());
-        output.and(getOutputTags().get(0), expand(input.getAll()));
+        output = output.and(getOutputTags().get(0), expand(input.getAll()));
         return output;
     }
 

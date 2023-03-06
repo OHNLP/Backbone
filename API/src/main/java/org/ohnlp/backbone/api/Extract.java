@@ -1,10 +1,7 @@
 package org.ohnlp.backbone.api;
 
-import org.apache.beam.sdk.values.PBegin;
-import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.components.ExtractToOne;
-import org.ohnlp.backbone.api.components.HasOutputs;
 
 import java.util.logging.Logger;
 
