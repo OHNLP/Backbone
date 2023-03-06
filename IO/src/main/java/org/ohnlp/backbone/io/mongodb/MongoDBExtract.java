@@ -1,24 +1,19 @@
 package org.ohnlp.backbone.io.mongodb;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.beam.sdk.io.mongodb.AggregationQuery;
-import org.apache.beam.sdk.io.mongodb.FindQuery;
 import org.apache.beam.sdk.io.mongodb.MongoDbIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
-import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.joda.time.DateTime;
-import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
@@ -57,7 +52,7 @@ import java.util.stream.Collectors;
                 "A schema corresponding to that of the input documents must be supplied. " +
                 "An aggregate pipeline can optionally be supplied as well to act as a filter/preprocessing step."
 )
-public class MongoDBExtract extends Extract {
+public class MongoDBExtract extends ExtractToOne {
     @ConfigurationProperty(
             path = "uri",
             desc = "The MongoDB URI to connect to in the format mongodb://[username:password@]host[:port1][,...hostN[:portN]]"
@@ -103,8 +98,63 @@ public class MongoDBExtract extends Extract {
     }
 
     @Override
-    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
-        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+    public Schema calculateOutputSchema() {
+        return this.schema;
+    }
+
+    @Override
+    public PCollection<Row> begin(PBegin input) {
+        MongoDbIO.Read readFn = MongoDbIO.read()
+                .withUri(this.uri)
+                .withDatabase(this.database)
+                .withCollection(this.collection);
+        if (this.filter.size() > 0) {
+            readFn = readFn.withQueryFn(AggregationQuery
+                    .create()
+                    .withMongoDbPipeline(
+                            this.filter.stream().map(BsonDocument::parse)
+                                    .collect(Collectors.toCollection(ArrayList::new))));
+        }
+        return input.apply("MongoDB Read", readFn)
+                .apply("Convert MongoDB Document to Row", ParDo.of(new DoFn<Document, Row>() {
+                    @ProcessElement
+                    public void processElement(@Element Document input, OutputReceiver<Row> out) {
+                        List<Object> vals = new ArrayList<>();
+                        mappings.forEach(e -> {
+                            LinkedList<String> path = new LinkedList<>(e.getKey());
+                            PrimitiveType type = e.getType();
+                            Object curr = input;
+                            String fieldName = path.removeFirst();
+                            while (!path.isEmpty()) {
+                                curr = ((Document) curr).get(fieldName);
+                            }
+                            switch (type) {
+                                case BOOLEAN:
+                                    vals.add(((Document) curr).getBoolean(fieldName));
+                                    break;
+                                case DATE:
+                                    vals.add(new DateTime(((Document) curr).getDate(fieldName)));
+                                    break;
+                                case DOUBLE:
+                                    vals.add(((Document) curr).getDouble(fieldName));
+                                    break;
+                                case INTEGER:
+                                    vals.add(((Document) curr).getInteger(fieldName));
+                                    break;
+                                case LONG:
+                                    vals.add(((Document) curr).getLong(fieldName));
+                                    break;
+                                case STRING:
+                                    vals.add(((Document) curr).getString(fieldName));
+                                    break;
+                                case OBJECT_ID:
+                                    vals.add(((Document) curr).getObjectId(fieldName).toHexString());
+                                    break;
+                            }
+                        });
+                        out.output(Row.withSchema(schema).addValues(vals).build());
+                    }
+                })).setRowSchema(schema);
     }
 
     private void parseSchema(Schema.Field field, LinkedList<String> pathQue) {
@@ -127,63 +177,6 @@ public class MongoDBExtract extends Extract {
         }
         PrimitiveType primType = PrimitiveType.fieldTypeToPrimitiveTypeMap.get(type);
         this.mappings.addLast(new SchemaDefinition(new ArrayList<>(pathQue), primType));
-    }
-
-    @Override
-    public PCollectionRowTuple expand(PBegin input) {
-        MongoDbIO.Read readFn = MongoDbIO.read()
-                .withUri(this.uri)
-                .withDatabase(this.database)
-                .withCollection(this.collection);
-        if (this.filter.size() > 0) {
-            readFn = readFn.withQueryFn(AggregationQuery
-                    .create()
-                    .withMongoDbPipeline(
-                            this.filter.stream().map(BsonDocument::parse)
-                                    .collect(Collectors.toCollection(ArrayList::new))));
-        }
-        return PCollectionRowTuple.of(
-                getOutputTags().get(0),
-                input.apply("MongoDB Read", readFn)
-                        .apply("Convert MongoDB Document to Row", ParDo.of(new DoFn<Document, Row>() {
-                            @ProcessElement
-                            public void processElement(@Element Document input, OutputReceiver<Row> out) {
-                                List<Object> vals = new ArrayList<>();
-                                mappings.forEach(e -> {
-                                    LinkedList<String> path = new LinkedList<>(e.getKey());
-                                    PrimitiveType type = e.getType();
-                                    Object curr = input;
-                                    String fieldName = path.removeFirst();
-                                    while (!path.isEmpty()) {
-                                        curr = ((Document) curr).get(fieldName);
-                                    }
-                                    switch (type) {
-                                        case BOOLEAN:
-                                            vals.add(((Document) curr).getBoolean(fieldName));
-                                            break;
-                                        case DATE:
-                                            vals.add(new DateTime(((Document) curr).getDate(fieldName)));
-                                            break;
-                                        case DOUBLE:
-                                            vals.add(((Document) curr).getDouble(fieldName));
-                                            break;
-                                        case INTEGER:
-                                            vals.add(((Document) curr).getInteger(fieldName));
-                                            break;
-                                        case LONG:
-                                            vals.add(((Document) curr).getLong(fieldName));
-                                            break;
-                                        case STRING:
-                                            vals.add(((Document) curr).getString(fieldName));
-                                            break;
-                                        case OBJECT_ID:
-                                            vals.add(((Document) curr).getObjectId(fieldName).toHexString());
-                                            break;
-                                    }
-                                });
-                                out.output(Row.withSchema(schema).addValues(vals).build());
-                            }
-                        })).setRowSchema(schema));
     }
 
     public enum PrimitiveType {

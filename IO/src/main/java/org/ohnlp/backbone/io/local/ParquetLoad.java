@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.io.local;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
@@ -11,9 +10,9 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ import java.util.ArrayList;
         desc = "Writes parquet records into a specified filesystem. One file will be created per partition/batch. " +
                 "An optional list of columns to subset for output can be supplied."
 )
-public class ParquetLoad extends Load {
+public class ParquetLoad extends LoadFromOne {
 
     @ConfigurationProperty(
             path = "fileSystemPath",

@@ -10,7 +10,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.ohnlp.backbone.api.transforms.OneToOneTransform;
+import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.components.OneToOneTransform;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
@@ -64,8 +65,8 @@ public class EncodedToPlainTextTransform extends OneToOneTransform {
     }
 
     @Override
-    public List<String> getOutputTags() {
-        return Collections.singletonList("plaintext-" + inputField);
+    public String getOutputTag() {
+        return "plaintext-" + inputField;
     }
 
     @Override

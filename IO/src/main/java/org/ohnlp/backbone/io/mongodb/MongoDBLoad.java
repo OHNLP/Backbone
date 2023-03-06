@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.io.mongodb;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.io.mongodb.MongoDbIO;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -8,9 +7,9 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.bson.Document;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
 
@@ -36,7 +35,7 @@ import java.util.ArrayList;
         name = "Writes Records into MongoDB",
         desc = "Writes Records into MongoDB. An optional list of fields to subset can also be provided."
 )
-public class MongoDBLoad extends Load {
+public class MongoDBLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "uri",
             desc = "The MongoDB URI to connect to in the format mongodb://[username:password@]host[:port1][,...hostN[:portN]]"

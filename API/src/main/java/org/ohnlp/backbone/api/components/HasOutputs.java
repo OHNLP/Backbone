@@ -1,4 +1,4 @@
-package org.ohnlp.backbone.api;
+package org.ohnlp.backbone.api.components;
 
 import org.apache.beam.sdk.schemas.Schema;
 

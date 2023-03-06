@@ -64,9 +64,11 @@ public class BackbonePipelineComponentConfiguration {
     }
 
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class InputDefinition {
         String componentID;
         String inputTag;
+        String outputTag;
 
         public String getComponentID() {
             return componentID;
@@ -82,6 +84,14 @@ public class BackbonePipelineComponentConfiguration {
 
         public void setInputTag(String inputTag) {
             this.inputTag = inputTag;
+        }
+
+        public String getOutputTag() {
+            return outputTag;
+        }
+
+        public void setOutputTag(String outputTag) {
+            this.outputTag = outputTag;
         }
     }
 }

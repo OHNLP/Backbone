@@ -7,18 +7,19 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 @ComponentDescription(
         name = "Load Data into Big Query",
         desc = "Appends the input collection into a BigQuery table, or creates the table if it does not exist"
 )
-public class BigQueryLoad extends Load {
+public class BigQueryLoad extends LoadFromOne {
 
     @ConfigurationProperty(
             path = "dest_table",
@@ -49,6 +50,5 @@ public class BigQueryLoad extends Load {
                         .withSchema(BigQueryUtils.toTableSchema(this.writeSchema))
                         .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
         );
-
     }
 }

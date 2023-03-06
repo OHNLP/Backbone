@@ -1,16 +1,17 @@
 package org.ohnlp.backbone.io.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.io.jdbc.SchemaUtilProxy;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.Create;
-import org.apache.beam.sdk.values.*;
-import org.ohnlp.backbone.api.Extract;
+import org.apache.beam.sdk.values.PBegin;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.sql.*;
@@ -27,7 +28,7 @@ import java.util.*;
                 "include an indexed identifier column that can be used to rapidly paginate/partition results for " +
                 "parallelized processing"
 )
-public class JDBCExtract extends Extract {
+public class JDBCExtract extends ExtractToOne {
     @ConfigurationProperty(
             path = "url",
             desc = "The JDBC URL to connect to"
@@ -162,7 +163,7 @@ public class JDBCExtract extends Extract {
     }
 
     @Override
-    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+    public Schema calculateOutputSchema() {
         Schema schema;
         try (Connection conn = ds.getConnection();
              PreparedStatement ps = conn.prepareStatement(this.query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
@@ -171,7 +172,29 @@ public class JDBCExtract extends Extract {
             throw new RuntimeException(throwables);
         }
         this.schema = schema;
-        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+        return this.schema;
+    }
+
+    @Override
+    public PCollection<Row> begin(PBegin input) {
+        List<Integer> offsets = new ArrayList<>();
+        for (int i = 0; i < numBatches; i++) {
+            offsets.add(i * batchSize); // Create a sequence of batches at the appropriate offset
+        }
+        return input.apply("JDBC Preflight", Create.of(offsets)) // First create partitions # = to num batches
+                .apply("JDBC Read", // Now actually do the read, the readall function will execute one query per input partition
+                        JdbcIO.<Integer, Row>readAll()
+                                .withDataSourceConfiguration(datasourceConfig)
+                                .withQuery(this.orderedQuery)
+                                .withRowMapper(this.driver.equals("org.sqlite.JDBC") ?
+                                        new SchemaUtilProxy.SQLiteBeamRowMapperProxy(schema) :
+                                        new SchemaUtilProxy.BeamRowMapperProxy(schema))
+                                .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
+                                    preparedStatement.setInt(1, element); // Replace
+                                })
+                                .withCoder(RowCoder.of(schema))
+                                .withOutputParallelization(false)
+                );
     }
 
     private String[] findPaginationOrderingColumns(String query) throws ComponentInitializationException {
@@ -208,28 +231,5 @@ public class JDBCExtract extends Extract {
             throw new ComponentInitializationException(t);
         }
 
-    }
-
-    public PCollectionRowTuple expand(PBegin input) {
-        List<Integer> offsets = new ArrayList<>();
-        for (int i = 0; i < numBatches; i++) {
-            offsets.add(i * batchSize); // Create a sequence of batches at the appropriate offset
-        }
-        return PCollectionRowTuple.of(
-                getOutputTags().get(0),
-                input.apply("JDBC Preflight", Create.of(offsets)) // First create partitions # = to num batches
-                        .apply("JDBC Read", // Now actually do the read, the readall function will execute one query per input partition
-                                JdbcIO.<Integer, Row>readAll()
-                                        .withDataSourceConfiguration(datasourceConfig)
-                                        .withQuery(this.orderedQuery)
-                                        .withRowMapper(this.driver.equals("org.sqlite.JDBC") ?
-                                                new SchemaUtilProxy.SQLiteBeamRowMapperProxy(schema) :
-                                                new SchemaUtilProxy.BeamRowMapperProxy(schema))
-                                        .withParameterSetter((JdbcIO.PreparedStatementSetter<Integer>) (element, preparedStatement) -> {
-                                            preparedStatement.setInt(1, element); // Replace
-                                        })
-                                        .withCoder(RowCoder.of(schema))
-                                        .withOutputParallelization(false)
-                        ));
     }
 }

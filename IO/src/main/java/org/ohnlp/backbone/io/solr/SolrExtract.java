@@ -1,38 +1,35 @@
 package org.ohnlp.backbone.io.solr;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.beam.sdk.io.solr.SolrIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 import org.apache.solr.common.SolrDocument;
-import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Reads in documents from Solr
- *
+ * <p>
  * configuration format:
  * <code>
- *     {
- *         "host": "solrHost",
- *         "user": "solrUser or NONE if no credentials needed",
- *         "password": "solrPass or NONE if no credentials needed",
- *         "collection": "collection name",
- *         "query": "solr query to run",
- *         "doc_id_field": "field_name_for_document_id",
- *         "doc_text_field": "field_name_for_document_text"
- *     }
+ * {
+ * "host": "solrHost",
+ * "user": "solrUser or NONE if no credentials needed",
+ * "password": "solrPass or NONE if no credentials needed",
+ * "collection": "collection name",
+ * "query": "solr query to run",
+ * "doc_id_field": "field_name_for_document_id",
+ * "doc_text_field": "field_name_for_document_text"
+ * }
  * </code>
  */
 // TODO currently input is limited strictly to three fields, make this more flexible
@@ -41,7 +38,7 @@ import java.util.Map;
         name = "Read Records from Solr",
         desc = "Reads Records from Solr. Note that this is currently limited to strictly two fields (note_id/txt)"
 )
-public class SolrExtract extends Extract {
+public class SolrExtract extends ExtractToOne {
     @ConfigurationProperty(
             path = "host",
             desc = "The Solr Host"
@@ -91,39 +88,34 @@ public class SolrExtract extends Extract {
     }
 
     @Override
-    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
+    public Schema calculateOutputSchema() {
         this.schema = Schema.builder()
                 .addStringField("note_id")
                 .addStringField("note_text").build();
-        return Collections.singletonMap(getOutputTags().get(0), this.schema);
+        return this.schema;
     }
 
-
     @Override
-    public PCollectionRowTuple expand(PBegin input) {
-        Schema rowSchema = Schema.builder()
-                .addStringField("note_id")
-                .addStringField("note_text").build();
+    public PCollection<Row> begin(PBegin input) {
         SolrIO.ConnectionConfiguration config = SolrIO.ConnectionConfiguration.create(solrHost);
         if (!user.equals("NONE")) {
             config = config.withBasicCredentials(user, pass);
         }
-        return PCollectionRowTuple.of(
-                getOutputTags().get(0),
+        return
                 SolrIO
-                .read()
-                .withConnectionConfiguration(config)
-                .withQuery(this.query)
-                .from(this.collection)
-                .expand(input)
-                .apply("Convert Solr Documents to Rows", ParDo.of(new DoFn<SolrDocument, Row>() {
-                    @ProcessElement
-                    public void processElement(@Element SolrDocument input, OutputReceiver<Row> output) {
-                        output.output(Row.withSchema(rowSchema).addValues(
-                                input.getFieldValue(docIdField),
-                                input.getFieldValue(docTextField)).build());
-                    }
-                }))
-                .setRowSchema(schema));
+                        .read()
+                        .withConnectionConfiguration(config)
+                        .withQuery(this.query)
+                        .from(this.collection)
+                        .expand(input)
+                        .apply("Convert Solr Documents to Rows", ParDo.of(new DoFn<SolrDocument, Row>() {
+                            @ProcessElement
+                            public void processElement(@Element SolrDocument input, OutputReceiver<Row> output) {
+                                output.output(Row.withSchema(schema).addValues(
+                                        input.getFieldValue(docIdField),
+                                        input.getFieldValue(docTextField)).build());
+                            }
+                        }))
+                        .setRowSchema(schema);
     }
 }

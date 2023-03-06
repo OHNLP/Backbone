@@ -1,24 +1,21 @@
 package org.ohnlp.backbone.io.local;
 
 import org.apache.beam.sdk.io.FileIO;
-import org.apache.beam.sdk.io.fs.MatchResult;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Reads in records from a file system directory.
@@ -39,7 +36,7 @@ import java.util.Map;
         name = "Read Records from Filesystem",
         desc = "Reads Records from a Directory, populating recordIDField with the file name and recordBodyField with the raw textual contents"
 )
-public class FileSystemExtract extends Extract {
+public class FileSystemExtract extends ExtractToOne {
 
     private FileIO.Match fileIterator;
     @ConfigurationProperty(
@@ -72,32 +69,27 @@ public class FileSystemExtract extends Extract {
     public List<String> getOutputTags() {
         return Collections.singletonList("Filesystem Records");
     }
-
     @Override
-    public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
-        return Collections.singletonMap(getOutputTags().get(0), this.rowSchema);
+    public Schema calculateOutputSchema() {
+        return this.rowSchema;
     }
 
     @Override
-    public PCollectionRowTuple expand(PBegin input) {
-        PCollection<MatchResult.Metadata> records = this.fileIterator.expand(input);
-        return PCollectionRowTuple.of(getOutputTags().get(0),
-                records
+    public PCollection<Row> begin(PBegin input) {
+        return this.fileIterator.expand(input)
                 // TODO support recursion
                 .apply(FileIO.readMatches().withDirectoryTreatment(FileIO.ReadMatches.DirectoryTreatment.SKIP))
                 .apply(ParDo.of(new DoFn<FileIO.ReadableFile, Row>() {
-                    @ProcessElement
-                    public void processElement(@Element FileIO.ReadableFile input, OutputReceiver<Row> output) throws IOException {
-                        String id = input.getMetadata().resourceId().getFilename();
-                        String content = input.readFullyAsUTF8String();
-                        output.output(Row.withSchema(rowSchema)
-                                .withFieldValue(recordIDField, id)
-                                .withFieldValue(recordBodyField, content)
-                                .build());
-                    }
-                })
-                ).setRowSchema(this.rowSchema)
-        );
+                            @ProcessElement
+                            public void processElement(@Element FileIO.ReadableFile input, OutputReceiver<Row> output) throws IOException {
+                                String id = input.getMetadata().resourceId().getFilename();
+                                String content = input.readFullyAsUTF8String();
+                                output.output(Row.withSchema(rowSchema)
+                                        .withFieldValue(recordIDField, id)
+                                        .withFieldValue(recordBodyField, content)
+                                        .build());
+                            }
+                        })
+                ).setRowSchema(this.rowSchema);
     }
-
 }

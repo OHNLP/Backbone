@@ -1,15 +1,11 @@
 package org.ohnlp.backbone.io.local;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
 import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
@@ -36,7 +32,7 @@ import java.util.List;
         desc = "Writes records as JSON, with records separated by newlines. Each partition will generate a separate file. " +
                 "An optional array of fields to subset for inclusion can also be supplied."
 )
-public class JSONLLoad extends Load {
+public class JSONLLoad extends LoadFromOne {
 
     @ConfigurationProperty(
             path = "fileSystemPath",

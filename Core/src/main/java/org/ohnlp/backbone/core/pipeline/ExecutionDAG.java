@@ -3,13 +3,12 @@ package org.ohnlp.backbone.core.pipeline;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PBegin;
-import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionRowTuple;
-import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.Load;
-import org.ohnlp.backbone.api.transforms.OneToOneTransform;
+import org.ohnlp.backbone.api.components.OneToOneTransform;
 import org.ohnlp.backbone.core.PipelineBuilder;
+import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -57,8 +56,8 @@ public class ExecutionDAG {
         Set<PipelineBuilder.InitializedPipelineComponent> deferred = new HashSet<>();
         for (PipelineBuilder.InitializedPipelineComponent component : componentsToProcess) {
             boolean processNow = true;
-            for (String requirement : component.getInputs()) {
-                if (!outputCollsByID.containsKey(requirement)) {
+            for (BackbonePipelineComponentConfiguration.InputDefinition requirement : component.getInputs()) {
+                if (!outputCollsByID.containsKey(requirement.getComponentID())) {
                     processNow = false;
                     break;
                 }

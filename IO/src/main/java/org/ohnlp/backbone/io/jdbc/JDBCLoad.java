@@ -1,19 +1,17 @@
 package org.ohnlp.backbone.io.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -50,7 +48,7 @@ import java.util.List;
                 "the paramMappings configuration argument will be used to substitute values into the respective ? " +
                 "in the insert query in sequential order."
 )
-public class JDBCLoad extends Load {
+public class JDBCLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "url",
             desc = "The JDBC URL to connect to"
