@@ -6,9 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.schemas.Schema;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 import org.ohnlp.backbone.api.Extract;
+import org.ohnlp.backbone.api.Load;
+import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractComponent;
-import org.ohnlp.backbone.api.components.UsesLegacyConfigInit;
+import org.ohnlp.backbone.api.components.legacy.v2.UsesLegacyConfigInit;
+import org.ohnlp.backbone.api.components.legacy.v2.WrappedExtract;
+import org.ohnlp.backbone.api.components.legacy.v2.WrappedLoad;
+import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
@@ -65,6 +70,13 @@ public class PipelineBuilder {
                 JsonNode configForInstance = configs[i].getConfig();
                 if (instance instanceof UsesLegacyConfigInit) {
                     ((UsesLegacyConfigInit)instance).initFromConfig(configs[i].getConfig());
+                    if (instance instanceof Extract) {
+                        instance = new WrappedExtract((Extract) instance);
+                    } else if (instance instanceof Transform) {
+                        instance = new WrappedTransform((Transform) instance);
+                    } else {
+                        instance = new WrappedLoad((Load) instance);
+                    }
                 } else {
                     injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
                     instance.init();

@@ -1,14 +1,15 @@
 package org.ohnlp.backbone.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.ohnlp.backbone.api.components.OneToOneTransform;
-import org.ohnlp.backbone.api.components.UsesLegacyConfigInit;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.Row;
+import org.ohnlp.backbone.api.components.legacy.v2.UsesLegacyConfigInit;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.logging.Logger;
 
 @Deprecated
-public abstract class Transform extends OneToOneTransform implements UsesLegacyConfigInit {
+public abstract class Transform extends BackbonePipelineComponent<PCollection<Row>, PCollection<Row>> implements UsesLegacyConfigInit {
 
     public Transform() {
         Logger.getGlobal().warning(this.getClass().getSimpleName() + " is built against an old version of backbone." +

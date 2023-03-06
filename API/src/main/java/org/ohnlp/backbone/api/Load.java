@@ -1,9 +1,11 @@
 package org.ohnlp.backbone.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.beam.sdk.schemas.Schema;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.POutput;
 import org.apache.beam.sdk.values.Row;
-import org.ohnlp.backbone.api.components.LoadFromOne;
-import org.ohnlp.backbone.api.components.UsesLegacyConfigInit;
+import org.ohnlp.backbone.api.components.legacy.v2.UsesLegacyConfigInit;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.logging.Logger;
@@ -14,7 +16,7 @@ import java.util.logging.Logger;
  * It is assumed that data will be transformed into beam {@link Row}s prior to this step
  */
 @Deprecated
-public abstract class Load extends LoadFromOne implements UsesLegacyConfigInit {
+public abstract class Load extends BackbonePipelineComponent<PCollection<Row>, POutput> implements UsesLegacyConfigInit {
     public Load() {
         Logger.getGlobal().warning(this.getClass().getSimpleName() + " is built against an old version of backbone." +
                 "While functionality has been retained via proxy classes for backwards compatibility purposes, these legacy classes should be " +
@@ -25,4 +27,8 @@ public abstract class Load extends LoadFromOne implements UsesLegacyConfigInit {
     @Override
     public void init() {}
     public void initFromConfig(JsonNode node) throws ComponentInitializationException {};
+
+    public Schema calculateOutputSchema(Schema input) {
+        return input;
+    }
 }
