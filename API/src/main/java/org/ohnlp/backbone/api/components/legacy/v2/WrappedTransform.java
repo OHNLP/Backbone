@@ -10,6 +10,7 @@ import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 public class WrappedTransform extends OneToOneTransform {
 
     private final Transform transform;
+    private Schema schema;
 
     public WrappedTransform(Transform transform) {
         this.transform = transform;
@@ -22,11 +23,16 @@ public class WrappedTransform extends OneToOneTransform {
 
     @Override
     public Schema calculateOutputSchema(Schema schema) {
-        return transform.calculateOutputSchema(schema);
+        this.schema = transform.calculateOutputSchema(schema);
+        return this.schema;
     }
 
     @Override
     public PCollection<Row> expand(PCollection<Row> input) {
-        return input.apply(transform);
+        PCollection<Row> result = input.apply(transform);
+        if (!result.hasSchema()) {
+            result.setRowSchema(schema);
+        }
+        return result;
     }
 }

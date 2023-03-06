@@ -13,6 +13,9 @@ import java.util.Map;
  * Represents a configurable pipeline component used in the OHNLP backbone
  */
 public abstract class BackbonePipelineComponent<I extends PInput, O extends POutput> extends PTransform<I, O> {
+    private Schema schema;
+    private boolean schemaInit = false;
+
     /**
      * Initializes the component from a specified JSON configuration. Note that any encrypted properties will have been
      * decrypted to plaintext form at this stage via Jasypt.
@@ -24,5 +27,4 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      *                                          unexpected values
      */
     public abstract void init() throws ComponentInitializationException;
-
 }

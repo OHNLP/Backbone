@@ -33,7 +33,14 @@ public class ExecutionDAG {
             PBegin start = PBegin.in(pipeline);
             PipelineBuilder.InitializedPipelineComponent componentMeta = componentsByID.get(extractID);
             ExtractComponent extract = (ExtractComponent) componentMeta.getComponent();
-            Map<String, Schema> out = extract.calculateOutputSchema(null);
+            Map<String, Schema> out;
+            if (!extract.isSchemaInit()) {
+                out = extract.calculateOutputSchema(null);
+                extract.setSchemaInit();
+                extract.setComponentSchema(out);
+            } else {
+                out = extract.getComponentSchema();
+            }
             PCollectionRowTuple df = start.apply("Step-" + extractID, extract);
             for (String tag : out.keySet()) {
                 if (!df.get(tag).hasSchema()) {
@@ -70,6 +77,7 @@ public class ExecutionDAG {
             }
             // First, map input to output
             AtomicReference<PCollectionRowTuple> inputToNextStep = new AtomicReference<>(PCollectionRowTuple.empty(p));
+            Map<String, Schema> inputSchemas = new HashMap<>();
             component.getInputs().forEach((outputTag, inputDef) -> {
                 PCollectionRowTuple prev = outputCollsByID.get(inputDef.getComponentID());
                 if (component.getComponent() instanceof SingleInputComponent) {
@@ -77,8 +85,7 @@ public class ExecutionDAG {
                         if (inputDef.getInputTag().equals("*")) {
                             throw new IllegalArgumentException(component.getComponentID() + " expects a single input but "
                                     + prev.getAll().size() + " inputs are created in previous step. An explicit mapping must be provided!");
-                        }
-                        else {
+                        } else {
                             if (!prev.has(inputDef.getInputTag())) {
                                 throw new IllegalArgumentException(component.getComponentID()
                                         + " requested input " + inputDef.getInputTag()
@@ -86,9 +93,11 @@ public class ExecutionDAG {
                                         "Available inputs: " + String.join(",", prev.getAll().keySet()));
                             }
                             inputToNextStep.set(PCollectionRowTuple.of(outputTag, prev.get(inputDef.getInputTag())));
+                            inputSchemas.put(outputTag, prev.get(inputDef.getInputTag()).getSchema());
                         }
                     } else {
                         inputToNextStep.set(PCollectionRowTuple.of(outputTag, prev.get(prev.getAll().keySet().toArray(new String[0])[0])));
+                        inputSchemas.put(outputTag, prev.get(prev.getAll().keySet().toArray(new String[0])[0]).getSchema());
                     }
                 } else {
                     String inputTag = inputDef.getInputTag();
@@ -99,15 +108,36 @@ public class ExecutionDAG {
                                 "Available inputs: " + String.join(",", prev.getAll().keySet()));
                     }
                     inputToNextStep.set(inputToNextStep.get().and(outputTag, prev.get(inputTag)));
+                    inputSchemas.put(outputTag, prev.get(inputTag).getSchema());
                 }
             });
+            // First initiate schema if necessary
+            Map<String, Schema> nextSchema = new HashMap<>();
+            boolean initSchema = false;
+            if (component.getComponent() instanceof SchemaInitializable) {
+                if (((SchemaInitializable) component.getComponent()).isSchemaInit()) {
+                    nextSchema = ((SchemaInitializable) component.getComponent()).getComponentSchema();
+                } else {
+                    initSchema = true;
+                }
+            }
             if (component.getComponent() instanceof TransformComponent) {
-                PCollectionRowTuple df = inputToNextStep.get().apply(component.getComponentID(), (TransformComponent)component.getComponent());
+                if (initSchema) {
+                    nextSchema = ((TransformComponent) component.getComponent()).calculateOutputSchema(inputSchemas);
+                    ((TransformComponent) component.getComponent()).setSchemaInit();
+                    ((TransformComponent) component.getComponent()).setComponentSchema(nextSchema);
+                }
+                PCollectionRowTuple df = inputToNextStep.get().apply(component.getComponentID(), (TransformComponent) component.getComponent());
                 outputCollsByID.put(component.getComponentID(), df);
+                for (String tag : nextSchema.keySet()) {
+                    if (!df.get(tag).hasSchema()) {
+                        df.get(tag).setRowSchema(nextSchema.get(tag));
+                    }
+                }
             } else if (component.getComponent() instanceof LoadComponent) {
-                inputToNextStep.get().apply(component.getComponentID(), (LoadComponent)component.getComponent());
+                inputToNextStep.get().apply(component.getComponentID(), (LoadComponent) component.getComponent());
             } else {
-                throw new IllegalArgumentException("A extract step is provided with inputs!");
+                throw new IllegalArgumentException("An extract step is provided with inputs!");
             }
         }
         return deferred;
