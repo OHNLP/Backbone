@@ -5,6 +5,8 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionRowTuple;
 import org.apache.beam.sdk.values.Row;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public abstract class OneToManyTransform extends TransformComponent implements SingleInputComponent {
@@ -26,4 +28,12 @@ public abstract class OneToManyTransform extends TransformComponent implements S
 
     public abstract Map<String, Schema> calculateOutputSchema(Schema input);
     public abstract PCollectionRowTuple expand(PCollection<Row> input);
+    @Override
+    public final List<String> getInputTags() {
+        return Collections.singletonList(getInputTag());
+    }
+    public String getInputTag() {
+        return "*";
+    }
+
 }
