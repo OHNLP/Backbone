@@ -50,8 +50,8 @@ public class PipelineBuilder {
         Map<String, InitializedPipelineComponent> componentsByID = new HashMap<>();
         for (int i = 0; i < configs.length; i++) {
             try {
-                if (configs[i].getStepId() == null) {
-                    configs[i].setStepId(i + "");
+                if (configs[i].getComponentID() == null) {
+                    configs[i].setComponentID(i + "");
                 }
                 if ((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) {
                     LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
@@ -81,9 +81,9 @@ public class PipelineBuilder {
                     injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
                     instance.init();
                 }
-                componentsByID.put(configs[i].getStepId(), new InitializedPipelineComponent(configs[i].getStepId(), configs[i].getInputs(), instance));
+                componentsByID.put(configs[i].getComponentID(), new InitializedPipelineComponent(configs[i].getComponentID(), configs[i].getInputs(), instance));
                 if (instance instanceof ExtractComponent) {
-                    extracts.add(configs[i].getStepId());
+                    extracts.add(configs[i].getComponentID());
                 }
             } catch (Throwable t) {
                 throw new ComponentInitializationException(t);

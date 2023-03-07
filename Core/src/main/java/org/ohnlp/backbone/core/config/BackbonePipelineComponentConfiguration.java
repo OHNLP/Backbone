@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,7 +15,7 @@ public class BackbonePipelineComponentConfiguration {
     /**
      * An ID for this step. Defaults to the numeric index of this step in the pipeline
      */
-    private String stepId;
+    private String componentID;
 
     /**
      * Input mappings
@@ -32,12 +31,12 @@ public class BackbonePipelineComponentConfiguration {
      */
     private JsonNode config;
 
-    public String getStepId() {
-        return stepId;
+    public String getComponentID() {
+        return componentID;
     }
 
-    public void setStepId(String stepId) {
-        this.stepId = stepId;
+    public void setComponentID(String componentID) {
+        this.componentID = componentID;
     }
 
     public Map<String, InputDefinition> getInputs() {
