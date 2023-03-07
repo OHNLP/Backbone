@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 @Deprecated
 public abstract class Load extends BackbonePipelineComponent<PCollection<Row>, POutput> implements UsesLegacyConfigInit {
     public Load() {
-        Logger.getGlobal().warning(this.getClass().getSimpleName() + " is built against an old version of backbone." +
+        Logger.getGlobal().warning(this.getClass().getSimpleName() + " is built against an old version of backbone. " +
                 "While functionality has been retained via proxy classes for backwards compatibility purposes, these legacy classes should be " +
                 "considered deprecated and may be retired in the future. Please check for updates for the module from " +
                 "which this class is derived, and/or update the module to be built against the latest version of Backbone");
