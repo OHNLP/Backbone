@@ -12,8 +12,7 @@ public abstract class LoadFromOne extends LoadComponent implements SingleInputCo
 
     @Override
     public POutput expand(PCollectionRowTuple input) {
-        PCollectionRowTuple output = PCollectionRowTuple.empty(input.getPipeline());
-        return expand(output.get(output.getAll().keySet().toArray(new String[0])[0]));
+        return expand(input.get(input.getAll().keySet().toArray(new String[0])[0]));
     }
 
     @Override
