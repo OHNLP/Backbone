@@ -14,6 +14,7 @@ import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ExecutionDAG {
 
@@ -138,6 +139,9 @@ public class ExecutionDAG {
                 inputToNextStep.get().apply(component.getComponentID(), (LoadComponent) component.getComponent());
             } else {
                 throw new IllegalArgumentException("An extract step is provided with inputs!");
+            }
+            if (component.getOutputs() != null) {
+                deferred.addAll(component.getOutputs().stream().map(componentsByID::get).collect(Collectors.toList()));
             }
         }
         return deferred;
