@@ -30,4 +30,14 @@ public abstract class LoadComponent extends BackbonePipelineComponent<PCollectio
         }
         return this.schema;
     }
+
+    @Override
+    public boolean hasRequiredColumns() {
+        return false;
+    }
+
+    @Override
+    public Schema getRequiredColumns() {
+        return null;
+    }
 }

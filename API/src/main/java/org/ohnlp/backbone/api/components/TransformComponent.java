@@ -29,4 +29,14 @@ public abstract class TransformComponent extends BackbonePipelineComponent<PColl
         }
         return this.schema;
     }
+
+    @Override
+    public boolean hasRequiredColumns() {
+        return false;
+    }
+
+    @Override
+    public Schema getRequiredColumns() {
+        return null;
+    }
 }
