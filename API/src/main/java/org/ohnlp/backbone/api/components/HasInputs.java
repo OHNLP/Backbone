@@ -6,6 +6,5 @@ import java.util.List;
 
 public interface HasInputs {
     List<String> getInputTags();
-    boolean hasRequiredColumns();
-    Schema getRequiredColumns();
+    Schema getRequiredColumns(String inputTag);
 }
