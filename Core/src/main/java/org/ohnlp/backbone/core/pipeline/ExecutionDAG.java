@@ -2,12 +2,11 @@ package org.ohnlp.backbone.core.pipeline;
 
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.schemas.Schema;
-import org.apache.beam.sdk.values.PBegin;
-import org.apache.beam.sdk.values.PCollectionRowTuple;
-import org.apache.beam.sdk.values.POutput;
+import org.apache.beam.sdk.values.*;
 import org.ohnlp.backbone.api.Extract;
 import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.components.*;
+import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.PipelineBuilder;
 import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
 
@@ -121,6 +120,31 @@ public class ExecutionDAG {
                 } else {
                     initSchema = true;
                 }
+            }
+            // Check schema for required columns if any
+            if (component.getComponent() instanceof HasInputs) {
+                Map<String, PCollection<Row>> inputs = inputToNextStep.get().getAll();
+                inputs.forEach((tag, coll) -> {
+                    Schema s = ((HasInputs) component.getComponent()).getRequiredColumns(tag);
+                    if (s != null) {
+                        // Has required columns
+                        Schema inputSchema = coll.getSchema();
+                        List<String> requiredButMissing = new ArrayList<>();
+                        for (Schema.Field f : s.getFields()) {
+                            if (!inputSchema.hasField(f.getName())) {
+                                // TODO do type checking
+                                requiredButMissing.add(f.getName());
+                            }
+                        }
+                        if (!requiredButMissing.isEmpty()) {
+                            throw new IllegalArgumentException(component.getComponentID()
+                                    + " requires the following fields that are missing from the supplied input: " +
+                                    "[" + String.join(",", requiredButMissing) + "]. Available Fields: [" +
+                                    String.join(",", inputSchema.getFieldNames()) + "]");
+                        }
+
+                    }
+                });
             }
             if (component.getComponent() instanceof TransformComponent) {
                 if (initSchema) {
