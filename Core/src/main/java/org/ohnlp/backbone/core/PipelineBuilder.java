@@ -15,8 +15,8 @@ import org.ohnlp.backbone.api.components.legacy.v2.WrappedExtract;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedLoad;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
-import org.ohnlp.backbone.core.config.BackboneConfiguration;
-import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.api.config.BackboneConfiguration;
+import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 import org.ohnlp.backbone.core.pipeline.ExecutionDAG;
 import org.ohnlp.backbone.io.util.ConfigUtils;
 

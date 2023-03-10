@@ -3,12 +3,9 @@ package org.ohnlp.backbone.core.pipeline;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.*;
-import org.ohnlp.backbone.api.Extract;
-import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.components.*;
-import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.core.PipelineBuilder;
-import org.ohnlp.backbone.core.config.BackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;

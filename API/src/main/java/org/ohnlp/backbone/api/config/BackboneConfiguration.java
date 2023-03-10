@@ -1,4 +1,4 @@
-package org.ohnlp.backbone.core.config;
+package org.ohnlp.backbone.api.config;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

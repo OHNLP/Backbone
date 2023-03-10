@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
-import org.ohnlp.backbone.core.config.BackboneConfiguration;
+import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.core.pipeline.ExecutionDAG;
 
 import java.io.IOException;
