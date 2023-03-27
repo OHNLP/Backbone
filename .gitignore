@@ -222,6 +222,5 @@ gradle-app.setting
 ### Backbone ###
 modules/
 configs/
-resources/
 Backbone.zip
 

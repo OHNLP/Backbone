@@ -129,11 +129,16 @@ public class PipelineBuilder {
                 }
                 f.setAccessible(true);
                 Object val;
-                if (f.getType().equals(Schema.class)) {
-                    val = ConfigUtils.resolveObjectSchema(curr);
-                } else {
-                    // Use jackson to infer the value
-                    val = om.treeToValue(curr, om.constructType(f.getGenericType()));
+                try {
+                    if (f.getType().equals(Schema.class)) {
+                        val = ConfigUtils.resolveObjectSchema(curr);
+                    } else {
+                        // Use jackson to infer the value
+                        val = om.treeToValue(curr, om.constructType(f.getGenericType()));
+                    }
+                } catch (Throwable t) {
+                    throw new IllegalArgumentException("Failed to instantiate config object " + f.getName()
+                            + " for component " + clazz.getName(), t);
                 }
                 // and set the field
                 f.set(instance, val);

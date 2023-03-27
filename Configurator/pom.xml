@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <parent>
+        <groupId>org.ohnlp.backbone</groupId>
+        <artifactId>backbone-parent</artifactId>
+        <version>3.0.0</version>
+    </parent>
+
+    <artifactId>configurator</artifactId>
+
+    <description>
+        Provides a Java Swing Interface for Editing Backbone Configuration Files
+    </description>
+
+    <properties>
+        <spring.version>5.3.25</spring.version>
+    </properties>
+
+    <dependencies>
+        <!-- "Baked" backbone dependencies that are always available at runtime -->
+        <dependency>
+            <groupId>org.ohnlp.backbone</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- Spring, used for classpath/module resolution -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+    </dependencies>
+</project>

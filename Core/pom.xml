@@ -17,7 +17,6 @@
     </properties>
     <build>
         <plugins>
-            <!-- Use the onejar maven plugin to bootstrap and set up a /lib folder for component install and uninstall -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -59,6 +58,7 @@
     </description>
 
     <dependencies>
+        <!-- Redeclare Beam dependencies here, because we need to shade it in -->
         <dependency>
             <groupId>org.ohnlp.backbone</groupId>
             <artifactId>api</artifactId>
@@ -68,11 +68,13 @@
             <groupId>org.ohnlp.backbone.io</groupId>
             <artifactId>io</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.ohnlp.backbone.transforms</groupId>
             <artifactId>transforms</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Adds a dependency on the Beam Google Cloud Platform IO module. -->
