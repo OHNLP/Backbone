@@ -51,7 +51,8 @@ public class EncodedToPlainTextTransform extends OneToOneTransform {
 
     @ConfigurationProperty(
             path = "input",
-            desc = "Input field containing decorated text"
+            desc = "Input field containing decorated text",
+            isInputColumn = true
     )
     private String inputField;
     @ConfigurationProperty(

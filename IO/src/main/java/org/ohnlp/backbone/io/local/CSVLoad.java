@@ -51,7 +51,8 @@ public class CSVLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional array of columns to include in output. Leave blank for all",
-            required = false
+            required = false,
+            isInputColumn = true
     )
     private List<String> fields = new ArrayList<>();
 

@@ -41,7 +41,8 @@ public class ParquetLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional list/subset of the columns to write. Leave blank for all",
-            required = false
+            required = false,
+            isInputColumn = true
     )
     private ArrayList<String> fields = new ArrayList<>();
 

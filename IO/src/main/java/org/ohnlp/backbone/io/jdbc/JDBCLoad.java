@@ -77,7 +77,8 @@ public class JDBCLoad extends LoadFromOne {
     private String query;
     @ConfigurationProperty(
             path = "paramMappings",
-            desc = "List of columns to use as values to insert. Should follow same order as the ?s used in the insert query"
+            desc = "List of columns to use as values to insert. Should follow same order as the ?s used in the insert query",
+            isInputColumn = true
     )
     private List<String> columnMappings;
     @ConfigurationProperty(

@@ -59,8 +59,9 @@ public class MongoDBLoad extends LoadFromOne {
     private int batchSize = 1000;
     @ConfigurationProperty(
             path = "fields",
-            desc = "The specific document fields to retrieve. Leave blank for all fields",
-            required = false
+            desc = "The specific document fields to write. Leave blank for all fields",
+            required = false,
+            isInputColumn = true
     )
     private ArrayList<String> fields = new ArrayList<>();
     private MongoDbIO.Write mongoInterface;

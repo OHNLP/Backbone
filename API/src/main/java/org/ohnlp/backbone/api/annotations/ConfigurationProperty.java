@@ -12,4 +12,6 @@ public @interface ConfigurationProperty {
     String path();
     String desc();
     boolean required() default true;
+
+    boolean isInputColumn() default false;
 }

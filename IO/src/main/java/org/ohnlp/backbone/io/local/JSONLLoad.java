@@ -42,7 +42,8 @@ public class JSONLLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional list/subset of the columns to write. Leave blank for all",
-            required = false
+            required = false,
+            isInputColumn = true
     )
     private List<String> fields = new ArrayList<>();
 
