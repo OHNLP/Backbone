@@ -1,1 +1,9 @@
-org.ohnlp.backbone.transforms
+{
+  "name": "OHNLPTK Backbone Transforms",
+  "desc": "Bundled Transforms Distributed with the OHNLP Toolkit",
+  "repo": "https://github.com/OHNLP/Backbone/tree/master/Transforms",
+  "packages": [
+    "org.ohnlp.backbone.transforms"
+  ],
+  "version": "${version}"
+}

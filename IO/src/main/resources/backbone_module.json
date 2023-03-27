@@ -1,3 +1,9 @@
 {
-
+  "name": "OHNLPTK Backbone I/O",
+  "desc": "Bundled I/O Connectors Distributed with the OHNLP Toolkit",
+  "repo": "https://github.com/OHNLP/Backbone/tree/master/IO",
+  "packages": [
+    "org.ohnlp.backbone.io"
+  ],
+  "version": "${version}"
 }
