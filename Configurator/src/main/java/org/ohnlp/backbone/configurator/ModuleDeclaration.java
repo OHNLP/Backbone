@@ -1,11 +1,14 @@
 package org.ohnlp.backbone.configurator;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 /**
  * A POJO Representing a Backbone Module parsed from backbone_module.json
  */
-public class ModuleInfo {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ModuleDeclaration {
     private String name;
     private String desc;
     private String repo;
