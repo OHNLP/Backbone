@@ -1,4 +1,4 @@
-package org.ohnlp.backbone.io.util;
+package org.ohnlp.backbone.api.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;

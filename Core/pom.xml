@@ -64,18 +64,6 @@
             <artifactId>api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.ohnlp.backbone.io</groupId>
-            <artifactId>io</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ohnlp.backbone.transforms</groupId>
-            <artifactId>transforms</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Adds a dependency on the Beam Google Cloud Platform IO module. -->
         <dependency>

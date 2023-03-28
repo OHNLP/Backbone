@@ -1,10 +1,9 @@
-package org.ohnlp.backbone.core.pipeline;
+package org.ohnlp.backbone.api.pipeline;
 
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.*;
 import org.ohnlp.backbone.api.components.*;
-import org.ohnlp.backbone.core.PipelineBuilder;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 
 import java.util.*;

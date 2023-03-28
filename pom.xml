@@ -28,7 +28,6 @@
         <module>Core</module>
         <module>Example-Backbone-Configs</module>
         <module>Plugin-Manager</module>
-        <module>Configurator</module>
     </modules>
 
     <distributionManagement>

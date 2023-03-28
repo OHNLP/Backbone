@@ -1,4 +1,4 @@
-package org.ohnlp.backbone.core;
+package org.ohnlp.backbone.api.pipeline;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,8 +17,7 @@ import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
-import org.ohnlp.backbone.core.pipeline.ExecutionDAG;
-import org.ohnlp.backbone.io.util.ConfigUtils;
+import org.ohnlp.backbone.api.util.ConfigUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
