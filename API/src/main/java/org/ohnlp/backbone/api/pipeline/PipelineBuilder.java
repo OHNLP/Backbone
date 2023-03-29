@@ -17,7 +17,7 @@ import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
-import org.ohnlp.backbone.api.util.ConfigUtils;
+import org.ohnlp.backbone.api.util.SchemaConfigUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -130,7 +130,7 @@ public class PipelineBuilder {
                 Object val;
                 try {
                     if (f.getType().equals(Schema.class)) {
-                        val = ConfigUtils.resolveObjectSchema(curr);
+                        val = SchemaConfigUtils.jsonToSchema(curr);
                     } else {
                         // Use jackson to infer the value
                         val = om.treeToValue(curr, om.constructType(f.getGenericType()));
