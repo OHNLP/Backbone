@@ -136,7 +136,7 @@
         </profile>
         <!-- Spark -->
         <profile>
-            <id>spark</id>
+            <id>spark3</id>
             <properties>
                 <backbone.runner>Spark3</backbone.runner>
             </properties>
