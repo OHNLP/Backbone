@@ -134,6 +134,20 @@
                 </dependency>
             </dependencies>
         </profile>
+        <!-- Spark -->
+        <profile>
+            <id>spark</id>
+            <properties>
+                <backbone.runner>Spark3</backbone.runner>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.beam</groupId>
+                    <artifactId>beam-runners-spark-3</artifactId>
+                    <version>${beam.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
         <!-- Spark Stanadalone-->
         <profile>
             <id>spark-standalone</id>

@@ -89,6 +89,17 @@
         <copy file="Core/target/Backbone-Core-Spark.jar" tofile="${dist}/bin/Backbone-Core-Spark.jar"/>
     </target>
 
+    <!-- Generate Spark Distribution -->
+    <target name="exec-spark3" description="compiles spark components" depends="dist-gcp">
+        <antcall target="run-mvn-goals">
+            <param name="mvn_goals" value="clean install -P spark3"/>
+        </antcall>
+    </target>
+
+    <target name="dist-spark3" depends="exec-spark3">
+        <copy file="Core/target/Backbone-Core-Spark3.jar" tofile="${dist}/bin/Backbone-Core-Spark3.jar"/>
+    </target>
+
     <!-- Generate Spark Standalone Distribution -->
     <target name="exec-spark-standalone" description="compiles spark standalone components" depends="dist-spark">
         <antcall target="run-mvn-goals">
