@@ -11,7 +11,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BackboneConfiguration {
     private String id;
-    private String decription;
+    private String description;
     private List<BackbonePipelineComponentConfiguration> pipeline;
 
     public String getId() {
@@ -22,12 +22,12 @@ public class BackboneConfiguration {
         this.id = id;
     }
 
-    public String getDecription() {
-        return decription;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDecription(String decription) {
-        this.decription = decription;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<BackbonePipelineComponentConfiguration> getPipeline() {
