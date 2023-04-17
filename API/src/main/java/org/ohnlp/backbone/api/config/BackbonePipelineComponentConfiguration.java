@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a declaration and associated configuration of a specific pipeline component.
@@ -83,6 +84,19 @@ public class BackbonePipelineComponentConfiguration {
 
         public void setInputTag(String inputTag) {
             this.inputTag = inputTag;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            InputDefinition that = (InputDefinition) o;
+            return Objects.equals(componentID, that.componentID) && Objects.equals(inputTag, that.inputTag);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(componentID, inputTag);
         }
     }
 }

@@ -32,7 +32,7 @@ import java.util.ArrayList;
  * For full listing of possible URI formats, please consult <a href="https://www.mongodb.com/docs/manual/reference/connection-string/">MongoDB Documentation</a>
  */
 @ComponentDescription(
-        name = "Writes Records into MongoDB",
+        name = "Write Records into MongoDB",
         desc = "Writes Records into MongoDB. An optional list of fields to subset can also be provided."
 )
 public class MongoDBLoad extends LoadFromOne {

@@ -23,7 +23,7 @@ import java.util.*;
  * using offsets for pagination.
  */
 @ComponentDescription(
-        name = "Read Records from a JDBC-compatible data source",
+        name = "Read Records from JDBC-compatible data source",
         desc = "Reads Records from a JDBC-compatible data source using a SQL query. Any queries should ideally " +
                 "include an indexed identifier column that can be used to rapidly paginate/partition results for " +
                 "parallelized processing"

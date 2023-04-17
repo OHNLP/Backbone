@@ -27,7 +27,7 @@ import java.util.ArrayList;
  * }
  */
 @ComponentDescription(
-        name = "Write Parquet Records into Filesystem",
+        name = "Write Records into Filesystem as Parquet",
         desc = "Writes parquet records into a specified filesystem. One file will be created per partition/batch. " +
                 "An optional list of columns to subset for output can be supplied."
 )

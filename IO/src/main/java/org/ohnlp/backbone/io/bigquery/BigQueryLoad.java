@@ -16,7 +16,7 @@ import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 @ComponentDescription(
-        name = "Load Data into Big Query",
+        name = "Write Records into BigQuery",
         desc = "Appends the input collection into a BigQuery table, or creates the table if it does not exist"
 )
 public class BigQueryLoad extends LoadFromOne {

@@ -18,8 +18,8 @@ import java.util.Collections;
 import java.util.List;
 
 @ComponentDescription(
-        name = "Extract Data from Big Query",
-        desc = "Retrieves data from big query either via query or from an entire table specification with a 1:1 column name mapping"
+        name = "Read Records from BigQuery",
+        desc = "Read Records from BigQuery either via query or from an entire table specification with a 1:1 column name mapping"
 )
 public class BigQueryExtract extends ExtractToOne {
     @ConfigurationProperty(

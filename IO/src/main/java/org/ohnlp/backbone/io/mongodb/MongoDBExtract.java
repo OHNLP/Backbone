@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * <br/>
  */
 @ComponentDescription(
-        name = "Read Records from a MongoDB datasource",
+        name = "Read Records from MongoDB datasource",
         desc = "Reads Records from a MongoDB Data source. Allowing disk spillover of query sorting is highly recommended. " +
                 "A schema corresponding to that of the input documents must be supplied. " +
                 "An aggregate pipeline can optionally be supplied as well to act as a filter/preprocessing step."
@@ -94,7 +94,7 @@ public class MongoDBExtract extends ExtractToOne {
 
     @Override
     public List<String> getOutputTags() {
-        return Collections.singletonList("MongoDB Records: " + collection);
+        return Collections.singletonList("MongoDB Records");
     }
 
     @Override

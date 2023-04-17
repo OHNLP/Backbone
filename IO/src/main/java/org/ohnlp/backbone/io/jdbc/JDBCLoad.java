@@ -42,7 +42,7 @@ import java.util.List;
  * </pre>
  */
 @ComponentDescription(
-        name = "Writes records into JDBC-compatible data source",
+        name = "Write Records into JDBC-Compatible Data Source",
         desc = "Writes records into a JDBC-compatible data source using a SQL query. The insert statements should " +
                 "follow Java PreparedStatement format (e.g. use ? for parameterized variables). The columns in " +
                 "the paramMappings configuration argument will be used to substitute values into the respective ? " +

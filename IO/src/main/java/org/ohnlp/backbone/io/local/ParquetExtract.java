@@ -36,7 +36,7 @@ import java.util.Map;
  * }
  */
 @ComponentDescription(
-        name = "Read Parquet Records from Filesystem",
+        name = "Read Records from Filesystem (Parquet)",
         desc = "Reads Parquet Records from a Supplied Folder. Record names, namespace, and schema must be supplied"
 )
 public class ParquetExtract extends ExtractToOne {

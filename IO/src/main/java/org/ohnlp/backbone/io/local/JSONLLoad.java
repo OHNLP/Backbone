@@ -28,7 +28,7 @@ import java.util.List;
  * </pre>
  */
 @ComponentDescription(
-        name = "Writes Records as JSON",
+        name = "Write Records into Filesystem as JSON",
         desc = "Writes records as JSON, with records separated by newlines. Each partition will generate a separate file. " +
                 "An optional array of fields to subset for inclusion can also be supplied."
 )

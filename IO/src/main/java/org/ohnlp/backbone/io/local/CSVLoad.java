@@ -31,7 +31,7 @@ import java.util.List;
  * </pre>
  */
 @ComponentDescription(
-        name = "Write Data as Comma-Delimited File",
+        name = "Write Records into Filesystem as Comma-Delimited File (CSV)",
         desc = "Writes records to a file system directory in CSV format. One file is created per partition. " +
                 "This component is intended for debugging use in local mode only - no guarantees are made about " +
                 "functionality in other environments"
