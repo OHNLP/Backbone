@@ -5,13 +5,16 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.LoadFromOne;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
 import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Writes records to a file system directory in JSON Lines format (JSONs w/ newline delimitation between records)
@@ -42,10 +45,10 @@ public class JSONLLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional list/subset of the columns to write. Leave blank for all",
-            required = false,
-            isInputColumn = true
+            required = false
     )
-    private List<String> fields = new ArrayList<>();
+    @InputColumnProperty
+    private List<InputColumn> fields = new ArrayList<>();
 
     @Override
     public void init() throws ComponentInitializationException {
@@ -60,6 +63,6 @@ public class JSONLLoad extends LoadFromOne {
                 ".jsonl",
                 null,
                 new RowToJSONEncoding(),
-                fields).expand(input);
+                fields.stream().map(InputColumn::getSourceColumnName).collect(Collectors.toList())).expand(input);
     }
 }

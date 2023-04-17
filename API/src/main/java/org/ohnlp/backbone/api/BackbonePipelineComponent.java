@@ -4,10 +4,8 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PInput;
 import org.apache.beam.sdk.values.POutput;
+import org.ohnlp.backbone.api.components.ValidationError;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Represents a configurable pipeline component used in the OHNLP backbone
@@ -27,4 +25,10 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      *                                          unexpected values
      */
     public abstract void init() throws ComponentInitializationException;
+
+    /**
+     * Validates component configuration as supplied if implemented.
+     * @throws ValidationError if a validation error occurs.
+     */
+    public abstract void validate() throws ValidationError;
 }

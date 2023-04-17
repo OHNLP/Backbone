@@ -9,11 +9,14 @@ import org.apache.beam.sdk.values.Row;
 import org.bson.Document;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.LoadFromOne;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowToJSONEncoding;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Writes to MongoDB
@@ -60,10 +63,10 @@ public class MongoDBLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "The specific document fields to write. Leave blank for all fields",
-            required = false,
-            isInputColumn = true
+            required = false
     )
-    private ArrayList<String> fields = new ArrayList<>();
+    @InputColumnProperty
+    private ArrayList<InputColumn> fields = new ArrayList<>();
     private MongoDbIO.Write mongoInterface;
     private RowToJSONEncoding jsonEncoder;
 
@@ -83,7 +86,7 @@ public class MongoDBLoad extends LoadFromOne {
                 input.apply("Map to MongoDB Document Types", ParDo.of(new DoFn<Row, Document>() {
                     @ProcessElement
                     public void processElement(@Element Row row, OutputReceiver<Document> out) {
-                        out.output(Document.parse(jsonEncoder.toText(row, fields)));
+                        out.output(Document.parse(jsonEncoder.toText(row, fields.stream().map(InputColumn::getSourceColumnName).collect(Collectors.toList()))));
                     }
                 }))
         );

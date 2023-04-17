@@ -12,7 +12,9 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.LoadFromOne;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.ArrayList;
@@ -41,10 +43,10 @@ public class ParquetLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional list/subset of the columns to write. Leave blank for all",
-            required = false,
-            isInputColumn = true
+            required = false
     )
-    private ArrayList<String> fields = new ArrayList<>();
+    @InputColumnProperty
+    private ArrayList<InputColumn> fields = new ArrayList<>();
 
     private transient Schema beamSchema;
 

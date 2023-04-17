@@ -11,9 +11,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.OneToOneTransform;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.xml.sax.SAXException;
 
@@ -51,10 +53,10 @@ public class EncodedToPlainTextTransform extends OneToOneTransform {
 
     @ConfigurationProperty(
             path = "input",
-            desc = "Input field containing decorated text",
-            isInputColumn = true
+            desc = "Input field containing decorated text"
     )
-    private String inputField;
+    @InputColumnProperty
+    private InputColumn inputField;
     @ConfigurationProperty(
             path = "output",
             desc = "Field into which to place decoded plaintext. Can be same as inputField for in-place replacement"
@@ -67,13 +69,13 @@ public class EncodedToPlainTextTransform extends OneToOneTransform {
 
     @Override
     public String getOutputTag() {
-        return "plaintext-" + inputField;
+        return "plaintext";
     }
 
     @Override
     public Schema calculateOutputSchema(Schema input) {
         List<Schema.Field> inputFields = input.getFields();
-        if (!this.inputField.equals(this.outputField)) {
+        if (!this.inputField.getSourceColumnName().equals(this.outputField)) {
             inputFields.add(Schema.Field.of(this.outputField, Schema.FieldType.STRING));
         }
         return Schema.of(inputFields.toArray(new Schema.Field[0]));
@@ -82,10 +84,10 @@ public class EncodedToPlainTextTransform extends OneToOneTransform {
 
     @Override
     public PCollection<Row> expand(PCollection<Row> input) {
-        if (!this.inputField.equals(this.outputField)) {
+        if (!this.inputField.getSourceColumnName().equals(this.outputField)) {
             input = input.apply(AddFields.<Row>create().field(this.outputField, Schema.FieldType.STRING));
         }
-        return input.apply(ParDo.of(new TikaDecoderFunction(this.inputField, this.outputField)));
+        return input.apply(ParDo.of(new TikaDecoderFunction(this.inputField.getSourceColumnName(), this.outputField)));
     }
 
     /*

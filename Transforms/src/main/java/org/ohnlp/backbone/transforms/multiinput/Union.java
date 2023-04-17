@@ -10,6 +10,7 @@ import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.TransformComponent;
+import org.ohnlp.backbone.api.components.ValidationError;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.util.*;
@@ -53,5 +54,28 @@ public class Union extends TransformComponent {
     @Override
     public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
         return Map.of("Union Output", input.values().stream().filter(Objects::nonNull).findFirst().get());
+    }
+
+    @Override
+    public void validate() throws ValidationError {
+        Schema base = null;
+        for (Map.Entry<String, Schema> e : getComponentSchema().entrySet()) {
+            if (base == null) {
+                base = e.getValue();
+            } else {
+                if (!base.equivalent(e.getValue())) {
+                    throw new ValidationError(
+                            ValidationError.ValidationErrorPriority.CRITICAL,
+                            "Error in Union: Input Schema Mismatch!\r\nSchema 1:\r\n$1\r\nSchema 2:\r\n$2".replace(
+                                    "$1",
+                                    base.toString()
+                            ).replace(
+                                    "$2",
+                                    e.getValue().toString()
+                            )
+                    );
+                }
+            }
+        }
     }
 }

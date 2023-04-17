@@ -30,4 +30,7 @@ public abstract class ExtractComponent extends BackbonePipelineComponent<PBegin,
         }
         return this.schema;
     }
+    @Override
+    public void validate() { // Do nothing by default
+    }
 }

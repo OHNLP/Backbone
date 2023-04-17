@@ -35,4 +35,8 @@ public abstract class LoadComponent extends BackbonePipelineComponent<PCollectio
     public Schema getRequiredColumns(String inputTag) {
         return null;
     }
+
+    @Override
+    public void validate() { // Do nothing by default
+    }
 }

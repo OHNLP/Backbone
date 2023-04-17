@@ -5,7 +5,9 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.LoadFromOne;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowHeaderToCSVEncoding;
 import org.ohnlp.backbone.io.local.encodings.RowValueToCSVEncoding;
@@ -13,6 +15,7 @@ import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -51,10 +54,10 @@ public class CSVLoad extends LoadFromOne {
     @ConfigurationProperty(
             path = "fields",
             desc = "An optional array of columns to include in output. Leave blank for all",
-            required = false,
-            isInputColumn = true
+            required = false
     )
-    private List<String> fields = new ArrayList<>();
+    @InputColumnProperty
+    private List<InputColumn> fields = new ArrayList<>();
 
     @Override
     public void init() throws ComponentInitializationException {
@@ -67,7 +70,7 @@ public class CSVLoad extends LoadFromOne {
                 ".csv",
                 this.writeHeader ? new RowHeaderToCSVEncoding() : null,
                 new RowValueToCSVEncoding(),
-                fields
+                fields.stream().map(InputColumn::getSourceColumnName).collect(Collectors.toList())
         ).expand(input);
     }
 }

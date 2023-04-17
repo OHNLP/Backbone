@@ -8,7 +8,9 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
+import org.ohnlp.backbone.api.annotations.InputColumnProperty;
 import org.ohnlp.backbone.api.components.LoadFromOne;
+import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
@@ -77,10 +79,10 @@ public class JDBCLoad extends LoadFromOne {
     private String query;
     @ConfigurationProperty(
             path = "paramMappings",
-            desc = "List of columns to use as values to insert. Should follow same order as the ?s used in the insert query",
-            isInputColumn = true
+            desc = "List of columns to use as values to insert. Should follow same order as the ?s used in the insert query"
     )
-    private List<String> columnMappings;
+    @InputColumnProperty
+    private List<InputColumn> columnMappings;
     @ConfigurationProperty(
             path = "idleTimeout",
             desc = "Amount of time in milliseconds to keep idle connections open. 0 for no limit",
@@ -93,8 +95,8 @@ public class JDBCLoad extends LoadFromOne {
         try {
             List<RowToPSMappingFunction> mappingOps = new LinkedList<>();
             int i = 1;
-            for (String column : columnMappings) {
-                mappingOps.add(new RowToPSMappingFunction(i++, column));
+            for (InputColumn column : columnMappings) {
+                mappingOps.add(new RowToPSMappingFunction(i++, column.getSourceColumnName()));
             }
             ComboPooledDataSource ds = new ComboPooledDataSource();
             ds.setDriverClass(driver);

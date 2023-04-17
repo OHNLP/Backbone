@@ -34,4 +34,8 @@ public abstract class TransformComponent extends BackbonePipelineComponent<PColl
     public Schema getRequiredColumns(String inputTag) {
         return null;
     }
+
+    @Override
+    public void validate() throws ValidationError { // Do nothing by default
+    }
 }
