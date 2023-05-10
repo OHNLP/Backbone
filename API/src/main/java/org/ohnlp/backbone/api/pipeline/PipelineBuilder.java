@@ -10,6 +10,7 @@ import org.ohnlp.backbone.api.Load;
 import org.ohnlp.backbone.api.Transform;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractComponent;
+import org.ohnlp.backbone.api.components.HasInputs;
 import org.ohnlp.backbone.api.components.legacy.v2.UsesLegacyConfigInit;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedExtract;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedLoad;
@@ -52,7 +53,7 @@ public class PipelineBuilder {
                 if (configs[i].getComponentID() == null) {
                     configs[i].setComponentID(i + "");
                 }
-                if ((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) {
+                if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(configs[i].getClazz())) {
                     LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
                             "used with a Backbone v3.0+ installation. Input/Output associations between " +
                             "different components are being inferred. Running the configuration update script " +

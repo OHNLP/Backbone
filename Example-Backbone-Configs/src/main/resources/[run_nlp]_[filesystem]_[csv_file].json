@@ -1,35 +1,23 @@
 {
-  "id" : "nlp_ohdsi_to_csv",
-  "description" : "A pipeline configuration that extracts clinical narratives from OHDSI CDM, runs a MedTagger NLP rulesets, and outputs back to OHDSI CDM as CSV.",
+  "id" : "nlp_filesystem_to_csv",
+  "description" : "A pipeline configuration that extracts clinical narratives from filesystem, runs a MedTagger NLP rulesets, and outputs back to OHDSI CDM as CSV.",
   "pipeline" : [ {
-    "componentID" : "Read from OMOP CDM NOTE_NLP table via JDBC",
-    "inputs" : { },
-    "clazz" : "org.ohnlp.backbone.io.jdbc.JDBCExtract",
-    "config" : {
-      "url" : "jdbc:sqlserver://your_jdbc_url_here",
-      "driver" : "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-      "user" : "your_mssql_username",
-      "password" : "your_mssql_pwd",
-      "query" : "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE",
-      "batch_size" : 5000,
-      "identifier_col" : "note_id"
-    }
-  }, {
     "componentID" : "Run MedTagger NLP Extract for PASC",
     "inputs" : {
       "*" : {
-        "componentID" : "Read from OMOP CDM NOTE_NLP table via JDBC",
-        "inputTag" : "JDBC Results"
+        "componentID" : "Read from Filesystem",
+        "inputTag" : "Filesystem Records"
       }
     },
     "clazz" : "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransform",
     "config" : {
       "input" : "note_text",
       "mode" : "STANDALONE_DICT_AND_IE",
-      "ruleset" : "pasc"
+      "ruleset" : "pasc",
+      "identifier_col" : "note_id"
     }
   }, {
-    "componentID" : "Convert MedTagger Output to OHDSI CDM Format",
+    "componentID" : "Convert to OHDSI OMOP CDM Format",
     "inputs" : {
       "*" : {
         "componentID" : "Run MedTagger NLP Extract for PASC",
@@ -41,16 +29,25 @@
       "ruleset" : "NONE"
     }
   }, {
-    "componentID" : "Write Output to Filesystem",
+    "componentID" : "Read from Filesystem",
+    "inputs" : { },
+    "clazz" : "org.ohnlp.backbone.io.local.FileSystemExtract",
+    "config" : {
+      "fileSystemPath" : "/path/to/input",
+      "recordIDField" : "note_id",
+      "recordBodyField" : "note_text"
+    }
+  }, {
+    "componentID" : "Write Records to Filesystem as CSV",
     "inputs" : {
       "*" : {
-        "componentID" : "Convert MedTagger Output to OHDSI CDM Format",
+        "componentID" : "Convert to OHDSI OMOP CDM Format",
         "inputTag" : "MedTaggerOutputToOHDSIFormatTransform"
       }
     },
     "clazz" : "org.ohnlp.backbone.io.local.CSVLoad",
     "config" : {
-      "fileSystemPath" : "path/to/output/dir/to/write/records",
+      "fileSystemPath" : "/path/to/output",
       "writeHeader" : true,
       "fields" : [ {
         "sourceColumnName" : "note_id",
@@ -59,13 +56,10 @@
         "sourceColumnName" : "section_concept_id",
         "sourceTag" : "*"
       }, {
-        "sourceColumnName" : "snippet",
-        "sourceTag" : "*"
-      }, {
-        "sourceColumnName" : "offset",
-        "sourceTag" : "*"
-      }, {
         "sourceColumnName" : "lexical_variant",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "snippet",
         "sourceTag" : "*"
       }, {
         "sourceColumnName" : "note_nlp_concept_id",
@@ -74,13 +68,16 @@
         "sourceColumnName" : "note_nlp_source_concept_id",
         "sourceTag" : "*"
       }, {
-        "sourceColumnName" : "nlp_system",
-        "sourceTag" : "*"
-      }, {
         "sourceColumnName" : "nlp_datetime",
         "sourceTag" : "*"
       }, {
         "sourceColumnName" : "term_modifiers",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "offset",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "nlp_system",
         "sourceTag" : "*"
       } ]
     }

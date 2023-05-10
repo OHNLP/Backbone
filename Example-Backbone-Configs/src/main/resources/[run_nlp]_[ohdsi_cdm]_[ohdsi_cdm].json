@@ -1,60 +1,92 @@
 {
-  "id": "nlp_ohdsi_to_ohdsi",
-  "description": "A pipeline configuration that extracts clinical narratives from OHDSI CDM, runs a MedTagger NLP rulesets, and outputs back to OHDSI CDM.",
-  "pipeline": [
-    {
-      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCExtract",
-      "config": {
-        "_desc": "An example configuration to extract notes from mssql OHDSI CDM instance, replace values as appropriate",
-        "url": "jdbc:sqlserver://your_jdbc_url_here",
-        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "user": "your_mssql_username",
-        "password": "your_mssql_pwd",
-        "batch_size": 5000,
-        "identifier_col": "note_id",
-        "query": "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE"
-      }
-    },
-    {
-      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransform",
-      "config": {
-        "_desc": "Runs NLP. In this case, we use pasc ruleset that is bundled by default as an example",
-        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
-        "input": "note_text",
-        "ruleset": "pasc",
-        "mode": "STANDALONE_DICT_AND_IE"
-      }
-    },
-    {
-      "clazz": "org.ohnlp.medtagger.backbone.MedTaggerOutputToOHDSIFormatTransform",
-      "config": {
-        "_desc": "Converts MedTagger output to OHDSI format",
-        "_desc_ctd": "Note: you will need to install the MedTagger Backbone Component found at https://www.github.com/OHNLP/MedTagger",
-        "ruleset": "NONE"
-      }
-    },
-    {
-      "clazz": "org.ohnlp.backbone.io.jdbc.JDBCLoad",
-      "config": {
-        "_desc": "An example configuration to load NLP artifacts into OHDSI CDM, replace values as appropriate",
-        "url": "jdbc:sqlserver://your_jdbc_url_here",
-        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "user": "your_mssql_username",
-        "password": "your_mssql_pwd",
-        "query": "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers, offset, nlp_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-        "paramMappings": [
-          "note_id",
-          "section_concept_id",
-          "lexical_variant",
-          "snippet",
-          "note_nlp_concept_id",
-          "note_nlp_source_concept_id",
-          "nlp_datetime",
-          "term_modifiers",
-          "offset",
-          "nlp_system"
-        ]
-      }
+  "id" : "nlp_ohdsi_to_ohdsi",
+  "description" : "A pipeline configuration that extracts clinical narratives from OHDSI CDM, runs a MedTagger NLP rulesets, and outputs back to OHDSI CDM.",
+  "pipeline" : [ {
+    "componentID" : "Read from OHDSI OMOP CDM NOTE Table via JDBC",
+    "inputs" : { },
+    "clazz" : "org.ohnlp.backbone.io.jdbc.JDBCExtract",
+    "config" : {
+      "url" : "jdbc:sqlserver://your_jdbc_url_here",
+      "driver" : "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+      "user" : "your_mssql_username",
+      "password" : "your_mssql_pwd",
+      "query" : "SELECT note_id, note_text FROM CDM_SCHEMA.NOTE",
+      "batch_size" : 5000,
+      "identifier_col" : "note_id"
     }
-  ]
+  }, {
+    "componentID" : "Run MedTagger NLP Extract for PASC",
+    "inputs" : {
+      "*" : {
+        "componentID" : "Read from OHDSI OMOP CDM NOTE Table via JDBC",
+        "inputTag" : "JDBC Results"
+      }
+    },
+    "clazz" : "org.ohnlp.medtagger.backbone.MedTaggerBackboneTransform",
+    "config" : {
+      "input" : "note_text",
+      "mode" : "STANDALONE_DICT_AND_IE",
+      "ruleset" : "pasc",
+      "identifier_col" : "note_id"
+    }
+  }, {
+    "componentID" : "Convert MedTagger Output to OHDSI OMOP CDM Format",
+    "inputs" : {
+      "*" : {
+        "componentID" : "Run MedTagger NLP Extract for PASC",
+        "inputTag" : "MedTaggerBackboneTransform"
+      }
+    },
+    "clazz" : "org.ohnlp.medtagger.backbone.MedTaggerOutputToOHDSIFormatTransform",
+    "config" : {
+      "ruleset" : "NONE"
+    }
+  }, {
+    "componentID" : "Write Records to OHDSI OMOP CDM note_nlp Table via JDBC",
+    "inputs" : {
+      "*" : {
+        "componentID" : "Convert MedTagger Output to OHDSI OMOP CDM Format",
+        "inputTag" : "MedTaggerOutputToOHDSIFormatTransform"
+      }
+    },
+    "clazz" : "org.ohnlp.backbone.io.jdbc.JDBCLoad",
+    "config" : {
+      "url" : "jdbc:sqlserver://your_jdbc_url_here",
+      "driver" : "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+      "user" : "your_mssql_username",
+      "password" : "your_mssql_pwd",
+      "query" : "INSERT INTO CDM_SCHEMA.NOTE_NLP (note_id, section_concept_id, lexical_variant, snippet, note_nlp_concept_id, note_nlp_source_concept_id, nlp_date, term_modifiers, offset, nlp_system) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+      "paramMappings" : [ {
+        "sourceColumnName" : "note_id",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "section_concept_id",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "lexical_variant",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "snippet",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "note_nlp_concept_id",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "note_nlp_source_concept_id",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "nlp_datetime",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "term_modifiers",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "offset",
+        "sourceTag" : "*"
+      }, {
+        "sourceColumnName" : "nlp_system",
+        "sourceTag" : "*"
+      } ]
+    }
+  } ]
 }

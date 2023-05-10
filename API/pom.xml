@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
         <artifactId>backbone-parent</artifactId>
-        <version>3.0.4</version>
+        <version>3.0.6</version>
     </parent>
 
     <artifactId>api</artifactId>
@@ -39,12 +39,4 @@
     <description>
         Application Programming Interface for OHNLP Backbone Components
     </description>
-
-    <dependencies>
-        <dependency>
-            <groupId>net.sf.py4j</groupId>
-            <artifactId>py4j</artifactId>
-            <version>0.10.7</version>
-        </dependency>
-    </dependencies>
 </project>
