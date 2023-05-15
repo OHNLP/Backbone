@@ -63,7 +63,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
                 this.proxiedComponent.toDoFnConfig());
         PCollection<String> pythonInput = ToJson.<Row>of().expand(inputColl);
         // Figure out what output tags are actually present and construct relevant tag lists
-        List<TupleTag<String>> outputs = this.getOutputTags().stream().map(s -> new TupleTag(s)).collect(Collectors.toList());
+        List<TupleTag<String>> outputs = this.getOutputTags().stream().map(s -> new TupleTag<String>(s)).collect(Collectors.toList());
         TupleTag<String> firstTag = outputs.get(0);
         outputs.remove(0);
         TupleTagList list = TupleTagList.empty();
