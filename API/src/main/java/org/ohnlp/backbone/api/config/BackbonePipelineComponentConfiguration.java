@@ -1,8 +1,11 @@
 package org.ohnlp.backbone.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
+import org.ohnlp.backbone.api.ComponentLang;
 
 import java.util.Map;
 import java.util.Objects;
@@ -14,6 +17,12 @@ import java.util.Objects;
 public class BackbonePipelineComponentConfiguration {
 
     /**
+     * The component lang
+     */
+    @JsonSetter(nulls = Nulls.SKIP)
+    private ComponentLang lang = ComponentLang.JAVA;
+
+    /**
      * An ID for this step. Defaults to the numeric index of this step in the pipeline
      */
     private String componentID;
@@ -21,7 +30,7 @@ public class BackbonePipelineComponentConfiguration {
     /**
      * Input mappings
      */
-    private  Map<String, InputDefinition>  inputs;
+    private Map<String, InputDefinition>  inputs;
 
     /**
      * The class of the pipeline component, should extend {@link BackbonePipelineComponent}
@@ -31,6 +40,14 @@ public class BackbonePipelineComponentConfiguration {
      * The configuration associated with this specific component
      */
     private JsonNode config;
+
+    public ComponentLang getLang() {
+        return lang;
+    }
+
+    public void setLang(ComponentLang lang) {
+        this.lang = lang;
+    }
 
     public String getComponentID() {
         return componentID;

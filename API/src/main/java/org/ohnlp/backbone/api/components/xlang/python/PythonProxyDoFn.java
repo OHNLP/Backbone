@@ -24,10 +24,10 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     private transient PythonBridge<PythonProcessingPartitionBasedDoFn> python;
     private transient PythonProcessingPartitionBasedDoFn<?, ?> proxiedDoFn;
 
-    public PythonProxyDoFn(String bundleName, String doFnEntryPoint, JsonNode infoFromDriver) throws JsonProcessingException {
+    public PythonProxyDoFn(String bundleName, String doFnEntryPoint, String infoFromDriver) {
         this.bundleName = bundleName;
         this.doFnEntryPoint = doFnEntryPoint;
-        this.driverInfo = new ObjectMapper().writeValueAsString(infoFromDriver);
+        this.driverInfo = infoFromDriver;
     }
 
 
@@ -52,14 +52,12 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
 
     @ProcessElement
     public void process(ProcessContext pc) {
-        // String => String since the requisite PTransform would have already been handled conversion to/from JSON
+        // String => String since the requisite PTransform would have already handled conversion to/from JSON
         String input = pc.element();
         if (this.proxiedDoFn instanceof PythonOneToOneTransformDoFn) {
             ((PythonOneToOneTransformDoFn)this.proxiedDoFn).apply(input).forEach(pc::output);
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
-            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(input).forEach(r -> {
-                pc.output(new TupleTag<>(r.getTag()), r.getRow());
-            });
+            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(input).forEach(r -> pc.output(new TupleTag<>(r.getTag()), r.getRow()));
         } // TODO other types
     }
 

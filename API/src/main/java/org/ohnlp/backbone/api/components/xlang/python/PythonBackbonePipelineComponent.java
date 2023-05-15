@@ -1,5 +1,6 @@
 package org.ohnlp.backbone.api.components.xlang.python;
 
+import java.util.List;
 import java.util.Map;
 
 public interface PythonBackbonePipelineComponent {
@@ -9,28 +10,28 @@ public interface PythonBackbonePipelineComponent {
     void init(String json);
 
     /**
-     * @return True if the schema has already been initialized
+     * @return The entry point for the DoFn itself relevant to this component declaration
      */
-    boolean isSchemaInit();
+    String getDoFnEntryPoint();
 
     /**
-     * Sets the schema initialization state to true
+     * @return A String-based JSON config to pass to the DoFn on init
      */
-    void setSchemaInit();
+    String toDoFnConfig();
 
     /**
-     * Sets the output schema for this component
-     * @param schemasByTag The output schema by tag
+     * @return A Tag describing the expected input
      */
-    void setComponentSchema(Map<String, String> schemasByTag);
+    String getInputTag();
 
     /**
-     * Get component output schema
+     * @return A list of one or more labels/tags for expected outputs
      */
-    Map<String, String> getComponentSchema();
+    List<String> getOutputTags();
 
     /**
-     * @return The actual DoFn that determines what to do
+     * @param jsonifiedInputSchemas The schemas being input
+     * @return A derived output schema from the supplied input schema
      */
-    PythonProcessingPartitionBasedDoFn<?, ?> getDoFn();
+    Map<String, String> calculateOutputSchema(Map<String, String> jsonifiedInputSchemas);
 }
