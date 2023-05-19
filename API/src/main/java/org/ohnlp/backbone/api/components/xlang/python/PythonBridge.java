@@ -1,5 +1,6 @@
 package org.ohnlp.backbone.api.components.xlang.python;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -15,12 +16,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.FileSystems;
+import java.nio.file.WatchService;
 import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
 public class PythonBridge<T> implements Serializable {
     private final String bundleName;
@@ -82,21 +87,10 @@ public class PythonBridge<T> implements Serializable {
         byte[] secretBytes = new byte[16];
         rnd.nextBytes(secretBytes);
         String secret = Hex.encodeHexString(secretBytes);
-
-        // Initiate java-side client server without a defined port
-        this.bridgeServer = new ClientServer.ClientServerBuilder()
-                .authToken(secret)
-                .javaPort(0)
-                .javaAddress(InetAddress.getLoopbackAddress())
-                .build();
-        this.bridgeServer.startServer();
-        // Resolve connection info and write to temp folder/file
-        int port = this.bridgeServer.getJavaServer().getListeningPort();
-        ObjectNode connInfo = JsonNodeFactory.instance.objectNode();
-        connInfo.put("port", port);
-        connInfo.put("token", secret);
-        new ObjectMapper().writer().writeValue(new File(envDir, "vars.json"), connInfo);
-        Logger.getGlobal().log(Level.INFO, "Starting python binding for " + entryPoint + " on " + InetAddress.getLoopbackAddress() + " port " + port);
+        // Create sentinel watcher for python process initialization
+        WatchService watcher = FileSystems.getDefault().newWatchService();
+        File done = new File(this.envDir, "python_bridge_meta.done");
+        done.toPath().register(watcher, ENTRY_CREATE);
         // Launch the python process
         String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_module_launcher.py", entryPoint);
         CommandLine cmdLine = CommandLine.parse(cmd);
@@ -117,6 +111,22 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // Wait for python process to start and the python_bridge_meta.done file to be created
+        try {
+            watcher.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Failed to start python bridge", e);
+        }
+
+        // Initiate java-side client server with info passed in the created python meta
+        JsonNode bridgeMeta = new ObjectMapper().readTree(new File(this.envDir, "python_bridge_meta.json"));
+        this.bridgeServer = new ClientServer.ClientServerBuilder()
+                .authToken(bridgeMeta.get("token").asText())
+                .javaPort(bridgeMeta.get("port").asInt())
+                .javaAddress(InetAddress.getLoopbackAddress())
+                .build();
+        this.bridgeServer.startServer();
+        Logger.getGlobal().log(Level.INFO, "Successfully started python binding for " + entryPoint + " on " + InetAddress.getLoopbackAddress() + " port " + bridgeMeta.get("port").asInt());
     }
 
     public void shutdownBridge() {
@@ -135,5 +145,4 @@ public class PythonBridge<T> implements Serializable {
         }
         parent.delete();
     }
-
 }
