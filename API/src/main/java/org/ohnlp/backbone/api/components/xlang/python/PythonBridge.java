@@ -82,11 +82,6 @@ public class PythonBridge<T> implements Serializable {
      * Spins up the python process/py4j bridge
      */
     private void startServer() throws IOException {
-        // Generate a common secret for bridge communications
-        SecureRandom rnd = new SecureRandom();
-        byte[] secretBytes = new byte[16];
-        rnd.nextBytes(secretBytes);
-        String secret = Hex.encodeHexString(secretBytes);
         // Create sentinel watcher for python process initialization
         WatchService watcher = FileSystems.getDefault().newWatchService();
         File done = new File(this.envDir, "python_bridge_meta.done");
@@ -105,7 +100,7 @@ public class PythonBridge<T> implements Serializable {
 
                 @Override
                 public void onProcessFailed(ExecuteException e) {
-                    // TODO
+                    throw new RuntimeException("Broken Python Bridge", e);
                 }
             });
         } catch (IOException e) {
