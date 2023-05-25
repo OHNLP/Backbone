@@ -59,7 +59,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // as well
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
                 this.bundleName,
-                this.proxiedComponent.getDoFnEntryPoint(),
+                this.entryPoint,
                 this.proxiedComponent.toDoFnConfig());
         PCollection<String> pythonInput = ToJson.<Row>of().expand(inputColl);
         // Figure out what output tags are actually present and construct relevant tag lists

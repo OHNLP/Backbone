@@ -85,10 +85,11 @@ public class PythonBridge<T> implements Serializable {
     private void startServer() throws IOException {
         // Create sentinel watcher for python process initialization
         WatchService watcher = FileSystems.getDefault().newWatchService();
-        File done = new File(this.envDir, "python_bridge_meta.done");
         this.envDir.toPath().register(watcher, ENTRY_CREATE);
         // Launch the python process
-        String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_module_launcher.py", entryPoint);
+        String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_module_launcher.py",
+                entryPoint,
+                this.pythonEntryPointClass.equals(PythonBackbonePipelineComponent.class) ? "component": "dofn");
         CommandLine cmdLine = CommandLine.parse(cmd);
         this.executor = new DefaultExecutor();
         this.executor.setWorkingDirectory(this.envDir);
