@@ -124,8 +124,8 @@ public class PythonBridge<T> implements Serializable {
                 WatchKey wk = watcher.poll(25, TimeUnit.MILLISECONDS);
                 if (wk != null) {
                     for (WatchEvent<?> e : wk.pollEvents()) {
-                        Path createdFilePath = ((WatchEvent<Path>) e).context();
-                        if (createdFilePath.endsWith("python_bridge_meta.done")) {
+                        Object createdFilePath = e.context();
+                        if (createdFilePath instanceof Path && ((Path)createdFilePath).endsWith("python_bridge_meta.done")) {
                             initDone = true;
                             break;
                         }
