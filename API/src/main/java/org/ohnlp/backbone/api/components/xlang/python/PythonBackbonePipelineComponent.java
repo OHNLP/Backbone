@@ -10,11 +10,6 @@ public interface PythonBackbonePipelineComponent {
     void init(String json);
 
     /**
-     * @return The entry point for the DoFn itself relevant to this component declaration
-     */
-    String getDoFnEntryPoint();
-
-    /**
      * @return A String-based JSON config to pass to the DoFn on init
      */
     String toDoFnConfig();
