@@ -72,7 +72,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         }
         // Actually call the proxied python DoFn and return as a PCollectionTuple
         PCollectionTuple pythonOutStringJSON = pythonInput.apply(
-                "Python: " + this.proxiedComponent.getDoFnEntryPoint(),
+                "Python: " + this.entryPoint,
                 ParDo.of(proxiedDoFn).withOutputTags(
                         firstTag,
                         list
