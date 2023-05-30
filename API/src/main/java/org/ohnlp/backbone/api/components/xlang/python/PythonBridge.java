@@ -44,6 +44,7 @@ public class PythonBridge<T> implements Serializable {
         startServer();
     }
 
+
     public T getPythonEntryPoint() {
         return (T) this.bridgeServer.getPythonServerEntryPoint(new Class<>[] {this.pythonEntryPointClass});
     }

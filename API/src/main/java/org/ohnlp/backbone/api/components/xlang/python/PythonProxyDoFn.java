@@ -1,8 +1,5 @@
 package org.ohnlp.backbone.api.components.xlang.python;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.TupleTag;
 
@@ -41,30 +38,33 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
         this.proxiedDoFn = this.python.getPythonEntryPoint();
 
         // Call initialization function with info from driver
-        this.proxiedDoFn.initFromDriver(driverInfo);
+        this.proxiedDoFn.init_from_driver(driverInfo);
     }
 
     @StartBundle
     public void startBundle() {
         // Execute onBundleStart for the proxied DoFn
-        this.proxiedDoFn.onBundleStart();
+        this.proxiedDoFn.on_bundle_start();
     }
 
     @ProcessElement
     public void process(ProcessContext pc) {
         // String => String since the requisite PTransform would have already handled conversion to/from JSON
         String input = pc.element();
+        PythonRow inputRow = this.proxiedDoFn.python_row_from_json_string(input);
         if (this.proxiedDoFn instanceof PythonOneToOneTransformDoFn) {
-            ((PythonOneToOneTransformDoFn)this.proxiedDoFn).apply(input).forEach(pc::output);
+            ((PythonOneToOneTransformDoFn)this.proxiedDoFn).apply(inputRow).forEach(r ->
+                    pc.output(this.proxiedDoFn.json_string_from_python_row(r)));
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
-            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(input).forEach(r -> pc.output(new TupleTag<>(r.getTag()), r.getRow()));
+            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(inputRow).forEach(r ->
+                    pc.output(new TupleTag<>(r.getTag()), this.proxiedDoFn.json_string_from_python_row(r.getRow())));
         } // TODO other types
     }
 
     @FinishBundle
     public void finishBundle() {
         try {
-            this.proxiedDoFn.onBundleEnd();
+            this.proxiedDoFn.on_bundle_end();
         } catch (Throwable e) {
             e.printStackTrace();
         }

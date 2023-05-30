@@ -4,13 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.schemas.Schema;
-import org.apache.beam.sdk.schemas.SchemaUtils;
-import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.JsonToRow;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.ToJson;
 import org.apache.beam.sdk.values.*;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableList;
 import org.ohnlp.backbone.api.components.SchemaInitializable;
 import org.ohnlp.backbone.api.components.SingleInputComponent;
 import org.ohnlp.backbone.api.components.TransformComponent;
@@ -60,7 +57,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
                 this.bundleName,
                 this.entryPoint,
-                this.proxiedComponent.toDoFnConfig());
+                this.proxiedComponent.to_do_fn_config());
         PCollection<String> pythonInput = ToJson.<Row>of().expand(inputColl);
         // Figure out what output tags are actually present and construct relevant tag lists
         List<TupleTag<String>> outputs = this.getOutputTags().stream().map(s -> new TupleTag<String>(s)).collect(Collectors.toList());
@@ -89,18 +86,18 @@ public class PythonProxyTransformComponent extends TransformComponent implements
 
     @Override
     public List<String> getInputTags() {
-        return Collections.singletonList(proxiedComponent.getInputTag());
+        return Collections.singletonList(proxiedComponent.get_input_tag());
     }
 
     @Override
     public List<String> getOutputTags() {
-        return proxiedComponent.getOutputTags();
+        return proxiedComponent.get_output_tags();
     }
 
     @Override
     public Map<String, Schema> calculateOutputSchema(Map<String, Schema> input) {
         // Because the Schema type does not exist in python's version of Beam, convert to JSON here
-        Map<String, String> jsonifiedInputSchemas = new HashMap<>();
+        Map<String, PythonSchema> inputSchemas = new HashMap<>();
         final ObjectMapper om = new ObjectMapper();
         input.forEach((tag, schema) -> {
             String jsonSchema = null;
@@ -109,15 +106,15 @@ public class PythonProxyTransformComponent extends TransformComponent implements
             } catch (JsonProcessingException ex) {
                 throw new RuntimeException("Error parsing Schema", ex);
             }
-            jsonifiedInputSchemas.put(tag, jsonSchema);
+            inputSchemas.put(tag, this.proxiedComponent.python_schema_from_json_string(jsonSchema));
         });
         // Perform the actual output schema derivation in the proxied python component
-        Map<String, String> jsonifiedOutputSchema = this.proxiedComponent.calculateOutputSchema(jsonifiedInputSchemas);
+        Map<String, PythonSchema> jsonifiedOutputSchema = this.proxiedComponent.calculate_output_schema(inputSchemas);
         // And map this back to java Schemas
         Map<String, Schema> outputSchema = new HashMap<>();
         jsonifiedOutputSchema.forEach((tag, schema) -> {
             try {
-                outputSchema.put(tag, SchemaConfigUtils.jsonToSchema(om.readTree(schema)));
+                outputSchema.put(tag, SchemaConfigUtils.jsonToSchema(om.readTree(this.proxiedComponent.json_string_from_python_schema(schema))));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Malformed python output schema", e);
             }
