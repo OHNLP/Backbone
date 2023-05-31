@@ -3,7 +3,14 @@ package org.ohnlp.backbone.api.components.xlang.python;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.RawValue;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.beam.sdk.schemas.Schema;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.JsonToRow;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.ToJson;
@@ -58,7 +65,8 @@ public class PythonProxyTransformComponent extends TransformComponent implements
                 this.bundleName,
                 this.entryPoint,
                 this.proxiedComponent.to_do_fn_config());
-        PCollection<String> pythonInput = ToJson.<Row>of().expand(inputColl);
+        PCollection<String> pythonInput = inputColl.apply("Python" + this.entryPoint + ": Convert Java Rows to JSON for Python Transfer",
+                ParDo.of(new RowToJson(inputColl.getSchema())));
         // Figure out what output tags are actually present and construct relevant tag lists
         List<TupleTag<String>> outputs = this.getOutputTags().stream().map(s -> new TupleTag<String>(s)).collect(Collectors.toList());
         TupleTag<String> firstTag = outputs.get(0);
@@ -78,6 +86,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // Map individual tag outputs back to Beam Rows
         PCollectionRowTuple rowRet = PCollectionRowTuple.empty(pythonOutStringJSON.getPipeline());
         for (String output : getOutputTags()) {
+            Schema targetSchema = getComponentSchema().get(output); // TODO update to use correct DoFn with full featureset
             rowRet = rowRet.and(output, pythonOutStringJSON.<String>get(output).apply("Convert Python Rows to Java Rows",
                     JsonToRow.withSchema(getComponentSchema().get(output))));
         }
@@ -120,5 +129,73 @@ public class PythonProxyTransformComponent extends TransformComponent implements
             }
         });
         return outputSchema;
+    }
+
+    public static class RowToJson extends DoFn<Row, String> {
+        public Schema inputSchema;
+        private ObjectMapper om;
+        private ObjectWriter ow;
+        private JsonNode schemaJson;
+
+        public RowToJson(Schema inputSchema) {
+            this.inputSchema = inputSchema;
+        }
+
+        @StartBundle
+        public void init() {
+            this.om = new ObjectMapper().registerModule(new JodaModule());
+            this.ow = this.om.writer();
+            this.schemaJson = SchemaConfigUtils.schemaToJSON(this.inputSchema);
+        }
+
+        @ProcessElement
+        public void process(ProcessContext pc) {
+            ObjectNode ret = JsonNodeFactory.instance.objectNode();
+            ret.set("schema", schemaJson);
+            Row r = pc.element();
+            if (r == null) {
+                return;
+            }
+            ObjectNode row = JsonNodeFactory.instance.objectNode();
+            this.inputSchema.getFields().forEach(field -> {
+
+            });
+            ret.set("contents", row);
+            try {
+                pc.output(ow.writeValueAsString(ret));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public JsonNode parseRow(Schema schema, Row r) {
+            ObjectNode ret = JsonNodeFactory.instance.objectNode();
+            schema.getFields().forEach(f -> {
+                ret.set(f.getName(), parseFieldContents(f.getType(), r.getValue(f.getName())));
+            });
+            return ret;
+        }
+
+        public JsonNode parseFieldContents(Schema.FieldType field, Object input) {
+            if (field.getTypeName().isCollectionType()) {
+                if (!(input instanceof Collection)) {
+                    throw new IllegalArgumentException("Schema mismatch, expected collection received type " + input.getClass().getName());
+                }
+                ArrayNode ret = JsonNodeFactory.instance.arrayNode(((Collection<?>)input).size());
+
+                for (Object child : ((Collection<?>)input)) {
+                    JsonNode childNode = parseFieldContents(Objects.requireNonNull(field.getCollectionElementType()), child);
+                    ret.add(childNode);
+                }
+                return ret;
+            } else if (field.getTypeName().isLogicalType()) {
+                if (!(input instanceof Row)) {
+                    throw new IllegalArgumentException("Schema mismatch, expected embedded row received type " + input.getClass().getName());
+                }
+                return parseRow(Objects.requireNonNull(field.getRowSchema()), (Row) input);
+            } else {
+                return this.om.valueToTree(input);
+            }
+        }
     }
 }
