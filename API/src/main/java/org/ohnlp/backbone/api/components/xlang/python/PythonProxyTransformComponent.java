@@ -7,14 +7,12 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.RawValue;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.JsonToRow;
 import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.ToJson;
 import org.apache.beam.sdk.values.*;
+import org.joda.time.DateTime;
 import org.ohnlp.backbone.api.components.SchemaInitializable;
 import org.ohnlp.backbone.api.components.SingleInputComponent;
 import org.ohnlp.backbone.api.components.TransformComponent;
@@ -86,9 +84,8 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // Map individual tag outputs back to Beam Rows
         PCollectionRowTuple rowRet = PCollectionRowTuple.empty(pythonOutStringJSON.getPipeline());
         for (String output : getOutputTags()) {
-            Schema targetSchema = getComponentSchema().get(output); // TODO update to use correct DoFn with full featureset
             rowRet = rowRet.and(output, pythonOutStringJSON.<String>get(output).apply("Convert Python Rows to Java Rows",
-                    JsonToRow.withSchema(getComponentSchema().get(output))));
+                    ParDo.of(new JsonToRow(getComponentSchema().get(output)))));
         }
         return rowRet;
     }
@@ -195,6 +192,81 @@ public class PythonProxyTransformComponent extends TransformComponent implements
                 return parseRow(Objects.requireNonNull(field.getRowSchema()), (Row) input);
             } else {
                 return this.om.valueToTree(input);
+            }
+        }
+    }
+
+    public static class JsonToRow extends DoFn<String, Row> {
+
+        private final Schema schema;
+        private ObjectMapper om;
+
+        public JsonToRow(Schema schema) {
+            this.schema = schema;
+        }
+
+        @StartBundle
+        public void init() {
+            this.om = new ObjectMapper().registerModule(new JodaModule());
+        }
+
+        @ProcessElement
+        public void process(ProcessContext pc) throws JsonProcessingException {
+            JsonNode rowJSON = this.om.readTree(pc.element());
+            JsonNode rowContents = rowJSON.get("contents");
+            pc.output(parseRowFromJSONWithSchema(this.schema, rowContents));
+        }
+
+        private Row parseRowFromJSONWithSchema(Schema rowSchema, JsonNode rowContents) {
+            List<Object> values = new ArrayList<>();
+            for (Schema.Field f : rowSchema.getFields()) {
+                if (rowContents.hasNonNull(f.getName())) {
+                    Object val = parseFieldValue(f.getType(), rowContents.get(f.getName()));
+                    values.add(val);
+                } else {
+                    values.add(null);
+                }
+            }
+            return Row.withSchema(rowSchema).addValues(values).build();
+        }
+
+        private Object parseFieldValue(Schema.FieldType type, JsonNode json) {
+            if (type.getTypeName().isLogicalType()) {
+                Schema childSchema = type.getRowSchema();
+                return parseRowFromJSONWithSchema(Objects.requireNonNull(childSchema), json);
+            } else if (type.getTypeName().isCollectionType()) {
+                Schema.FieldType elementType = type.getCollectionElementType();
+                List<Object> elements = new ArrayList<>();
+                // JSON should be an ArrayNode, so just iterate in order over contents
+                json.forEach(child -> {
+                    elements.add(parseFieldValue(Objects.requireNonNull(elementType), child));
+                });
+                return elements;
+            } else {
+                switch (type.getTypeName()) {
+                    case BYTE:
+                        return (byte)json.intValue();
+                    case INT16:
+                        return (short)json.intValue();
+                    case INT32:
+                        return json.intValue();
+                    case INT64:
+                        return json.longValue();
+                    case DECIMAL:
+                        return json.decimalValue();
+                    case FLOAT:
+                        return json.floatValue();
+                    case DOUBLE:
+                        return json.doubleValue();
+                    case STRING:
+                        return json.asText();
+                    case DATETIME:
+                        return DateTime.parse(json.asText());
+                    case BOOLEAN:
+                        return json.booleanValue();
+                    default:
+                        throw new IllegalArgumentException("Attempted to deserialize value of type " + type.getTypeName() + " as a simple/primitive value");
+                }
             }
         }
     }
