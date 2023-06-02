@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.RawValue;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -153,11 +154,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
             if (r == null) {
                 return;
             }
-            ObjectNode row = JsonNodeFactory.instance.objectNode();
-            this.inputSchema.getFields().forEach(field -> {
-
-            });
-            ret.set("contents", row);
+            ret.set("contents", this.parseRow(this.inputSchema, r));
             try {
                 pc.output(ow.writeValueAsString(ret));
             } catch (JsonProcessingException e) {
