@@ -29,13 +29,16 @@ public class PythonProxyTransformComponent extends TransformComponent implements
 
     private String config;
     private String entryPoint;
+    private String entryClass;
     private String bundleName;
     private PythonBackbonePipelineComponent proxiedComponent;
+
     @Override
     public void injectConfig(JsonNode config) {
         try {
             this.bundleName = config.get("python_bundle_name").asText();
             this.entryPoint = config.get("python_entry_point").asText();
+            this.entryClass = config.get("python_entry_class").asText();
             this.config = new ObjectMapper().writer().writeValueAsString(config);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -45,7 +48,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     @Override
     public void init() throws ComponentInitializationException {
         try {
-            PythonBridge<PythonBackbonePipelineComponent> python = new PythonBridge<>(this.bundleName, this.entryPoint, PythonBackbonePipelineComponent.class);
+            PythonBridge<PythonBackbonePipelineComponent> python = new PythonBridge<>(this.bundleName, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
             python.startBridge();
             this.proxiedComponent = python.getPythonEntryPoint();
             this.proxiedComponent.init(this.config);
@@ -63,6 +66,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
                 this.bundleName,
                 this.entryPoint,
+                this.entryClass,
                 this.proxiedComponent.to_do_fn_config());
         PCollection<String> pythonInput = inputColl.apply("Python" + this.entryPoint + ": Convert Java Rows to JSON for Python Transfer",
                 ParDo.of(new RowToJson(inputColl.getSchema())));

@@ -16,14 +16,16 @@ import java.io.*;
 public class PythonProxyDoFn extends DoFn<String, String> implements Serializable {
     private final String bundleName;
     private final String doFnEntryPoint;
+    private final String doFnEntryClass;
     private final String driverInfo;
 
     private transient PythonBridge<PythonProcessingPartitionBasedDoFn> python;
     private transient PythonProcessingPartitionBasedDoFn<?, ?> proxiedDoFn;
 
-    public PythonProxyDoFn(String bundleName, String doFnEntryPoint, String infoFromDriver) {
+    public PythonProxyDoFn(String bundleName, String doFnEntryPoint, String doFnEntryClass, String infoFromDriver) {
         this.bundleName = bundleName;
         this.doFnEntryPoint = doFnEntryPoint;
+        this.doFnEntryClass = doFnEntryClass;
         this.driverInfo = infoFromDriver;
     }
 
@@ -31,7 +33,7 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     @Setup
     public void init() throws IOException {
         // Init python bridge
-        this.python = new PythonBridge<>(this.bundleName, this.doFnEntryPoint, PythonProcessingPartitionBasedDoFn.class);
+        this.python = new PythonBridge<>(this.bundleName, this.doFnEntryPoint, this.doFnEntryClass, PythonProcessingPartitionBasedDoFn.class);
         this.python.startBridge();
 
         // Get proxied DoFn

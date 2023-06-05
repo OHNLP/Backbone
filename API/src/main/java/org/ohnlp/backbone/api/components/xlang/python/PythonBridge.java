@@ -8,10 +8,7 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
 import py4j.ClientServer;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.net.InetAddress;
 import java.nio.file.*;
 import java.util.Arrays;
@@ -28,14 +25,17 @@ public class PythonBridge<T> implements Serializable {
     private final long pythonInitTimeout = 30000; // TODO make this configurable
     private final String bundleName;
     private final String entryPoint;
+    private final String entryClass;
     private final Class<T> pythonEntryPointClass;
     private transient File envDir;
     private transient DefaultExecutor executor;
     private transient ClientServer bridgeServer;
+    private transient File launchFile;
 
-    public PythonBridge(String bundleName, String entryPoint, Class<T> clazz) throws IOException {
+    public PythonBridge(String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
         this.bundleName = bundleName;
         this.entryPoint = entryPoint;
+        this.entryClass = entryClass;
         this.pythonEntryPointClass = clazz;
     }
 
@@ -59,24 +59,28 @@ public class PythonBridge<T> implements Serializable {
         this.envDir = new File(tmpDir, name);
         this.envDir.mkdirs();
         // Extract both the python launcher script and the bundle itself
-        for (String bundle : Arrays.asList("backbone_python_launcher.zip", this.bundleName)) {
-            try (ZipInputStream zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + bundle))) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    if (entry.isDirectory()) {
-                        continue;
-                    }
-                    String pathRelative = entry.getName();
-                    File pathInTmp = new File(this.envDir, pathRelative);
-                    byte[] contents = zis.readAllBytes();
-                    try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
-                        fos.write(contents);
-                        fos.flush();
-                    }
+        try (InputStream launcherPy = this.getClass().getResourceAsStream("/backbone_launcher.py")) {
+            this.launchFile = new File(this.envDir, "backbone_launcher_" + System.currentTimeMillis() + ".py");
+            Files.copy(launcherPy, this.launchFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try (ZipInputStream zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + this.bundleName))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                String pathRelative = entry.getName();
+                File pathInTmp = new File(this.envDir, pathRelative);
+                byte[] contents = zis.readAllBytes();
+                try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
+                    fos.write(contents);
+                    fos.flush();
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -88,8 +92,9 @@ public class PythonBridge<T> implements Serializable {
         WatchService watcher = FileSystems.getDefault().newWatchService();
         this.envDir.toPath().register(watcher, ENTRY_CREATE);
         // Launch the python process
-        String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_module_launcher.py",
+        String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_launcher.py",
                 entryPoint,
+                entryClass,
                 this.pythonEntryPointClass.equals(PythonBackbonePipelineComponent.class) ? "component": "dofn");
         CommandLine cmdLine = CommandLine.parse(cmd);
         this.executor = new DefaultExecutor();
