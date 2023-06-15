@@ -50,6 +50,7 @@
         <copydir src="scripts" dest="${dist}"/>
         <copy file="Plugin-Manager/target/plugin-manager.jar" tofile="${dist}/bin/Plugin-Manager.jar"/>
         <mkdir dir="${dist}/modules"/>
+        <mkdir dir="${dist}/python_modules"/>
         <mkdir dir="${dist}/resources"/>
         <copy file="IO/target/Backbone-IO.jar" tofile="${dist}/modules/Backbone-IO.jar"/>
         <copy file="Transforms/target/Backbone-Transforms.jar" tofile="${dist}/modules/Backbone-Transforms.jar"/>

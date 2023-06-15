@@ -59,7 +59,7 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
                     pc.output(this.proxiedDoFn.json_string_from_python_row(r)));
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
             ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(inputRow).forEach(r ->
-                    pc.output(new TupleTag<>(r.getTag()), this.proxiedDoFn.json_string_from_python_row(r.getRow())));
+                    pc.output(new TupleTag<>(r.get_tag()), this.proxiedDoFn.json_string_from_python_row(r.get_row())));
         } // TODO other types
     }
 

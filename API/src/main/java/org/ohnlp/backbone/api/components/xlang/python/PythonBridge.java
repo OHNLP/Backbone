@@ -6,14 +6,18 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
+import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
 import py4j.ClientServer;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.nio.file.*;
-import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -27,10 +31,12 @@ public class PythonBridge<T> implements Serializable {
     private final String entryPoint;
     private final String entryClass;
     private final Class<T> pythonEntryPointClass;
+    private transient File workDir;
     private transient File envDir;
     private transient DefaultExecutor executor;
     private transient ClientServer bridgeServer;
     private transient File launchFile;
+    private transient OSType os;
 
     public PythonBridge(String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
         this.bundleName = bundleName;
@@ -40,13 +46,27 @@ public class PythonBridge<T> implements Serializable {
     }
 
     public void startBridge() throws IOException {
+        detectOS();
         extractPythonResources();
         startServer();
     }
 
+    private void detectOS() {
+        String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+        if (os.contains("windows")) {
+            this.os = OSType.WINDOWS;
+        } else if (os.contains("mac") || os.contains("darwin")) {
+            this.os = OSType.MAC_DARWIN;
+        } else if (!os.contains("linux")) {
+            this.os = OSType.LINUX;
+        } else {
+            this.os = OSType.OTHER;
+        }
+    }
+
 
     public T getPythonEntryPoint() {
-        return (T) this.bridgeServer.getPythonServerEntryPoint(new Class<>[] {this.pythonEntryPointClass});
+        return (T) this.bridgeServer.getPythonServerEntryPoint(new Class<>[]{this.pythonEntryPointClass});
     }
 
     /*
@@ -56,15 +76,16 @@ public class PythonBridge<T> implements Serializable {
     private void extractPythonResources() {
         String name = this.getClass().getSimpleName() + "_tmp_" + UUID.randomUUID();
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        this.envDir = new File(tmpDir, name);
-        this.envDir.mkdirs();
-        // Extract both the python launcher script and the bundle itself
+        this.workDir = new File(tmpDir, name);
+        this.workDir.mkdirs();
+        // Extract both python launcher script
         try (InputStream launcherPy = this.getClass().getResourceAsStream("/backbone_launcher.py")) {
-            this.launchFile = new File(this.envDir, "backbone_launcher_" + System.currentTimeMillis() + ".py");
+            this.launchFile = new File(this.workDir, "backbone_launcher_" + System.currentTimeMillis() + ".py");
             Files.copy(launcherPy, this.launchFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // Extract the bundle itself
         try (ZipInputStream zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + this.bundleName))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -72,7 +93,7 @@ public class PythonBridge<T> implements Serializable {
                     continue;
                 }
                 String pathRelative = entry.getName();
-                File pathInTmp = new File(this.envDir, pathRelative);
+                File pathInTmp = new File(this.workDir, pathRelative);
                 byte[] contents = zis.readAllBytes();
                 try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
                     fos.write(contents);
@@ -82,6 +103,51 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // Extract shared python resources
+        final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+        try (JarFile jar = new JarFile(jarFile)){
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                if (!entry.getName().contains("python_resources")) {
+                    continue;
+                }
+                String pathRelative = entry.getName();
+                // -- truncate the python_resources part out of the output path
+                pathRelative = pathRelative.replaceAll("^" + File.separator + "?python_resources" + File.separator, "");
+                File pathInTmp = new File(this.workDir, pathRelative);
+                byte[] contents = jar.getInputStream(entry).readAllBytes();
+                try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
+                    fos.write(contents);
+                    fos.flush();
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
+        TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
+        if (this.os.equals(OSType.WINDOWS)) {
+            unarchiver.setSourceFile(new File(this.workDir, "env-linux.tar.gz"));
+        } else {
+            if (this.os.equals(OSType.MAC_DARWIN)) {
+                Logger.getGlobal().warning("Macintosh/Darwin-based OS is currently not explicitly supported, " +
+                        "using linux environment as fallback. Unexpected behaviour may occur");
+
+            } else if (!this.os.equals(OSType.LINUX)) {
+                Logger.getGlobal().warning(System.getProperty("os.name") + " is currently not explicitly supported, " +
+                        "using linux environment as fallback. Unexpected behaviour may occur");
+            }
+            unarchiver.setSourceFile(new File(this.workDir, "env-linux.tar.gz"));
+        }
+        this.envDir = new File(this.workDir, "env_" + UUID.randomUUID().getLeastSignificantBits());
+        this.envDir.mkdirs();
+        unarchiver.setDestDirectory(this.envDir);
+        unarchiver.extract();
     }
 
     /*
@@ -90,15 +156,20 @@ public class PythonBridge<T> implements Serializable {
     private void startServer() throws IOException {
         // Create sentinel watcher for python process initialization
         WatchService watcher = FileSystems.getDefault().newWatchService();
-        this.envDir.toPath().register(watcher, ENTRY_CREATE);
+        this.workDir.toPath().register(watcher, ENTRY_CREATE);
         // Launch the python process
-        String cmd = String.join(" ", new File("bin", "python").getAbsolutePath(), "backbone_launcher.py",
+        // TODO this does NOT activate conda/fix prefixes, which may cause issues with some libraries
+        // TODO Consider doing the full conda-unpack routine in a future release
+        // See: https://conda.github.io/conda-pack/ under "Commandline Usage"
+        String cmd = String.join(" ",
+                new File(new File(this.envDir, "bin"), "python").getAbsolutePath(),
+                "backbone_launcher.py",
                 entryPoint,
                 entryClass,
-                this.pythonEntryPointClass.equals(PythonBackbonePipelineComponent.class) ? "component": "dofn");
+                this.pythonEntryPointClass.equals(PythonBackbonePipelineComponent.class) ? "component" : "dofn");
         CommandLine cmdLine = CommandLine.parse(cmd);
         this.executor = new DefaultExecutor();
-        this.executor.setWorkingDirectory(this.envDir);
+        this.executor.setWorkingDirectory(this.workDir);
         try {
             this.executor.execute(cmdLine, new ExecuteResultHandler() {
                 @Override
@@ -110,7 +181,8 @@ public class PythonBridge<T> implements Serializable {
                 public void onProcessFailed(ExecuteException e) {
                     try {
                         shutdownBridge();
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable ignored) {
+                    }
                     throw new RuntimeException("Broken Python Bridge", e);
                 }
             });
@@ -124,7 +196,8 @@ public class PythonBridge<T> implements Serializable {
             if (System.currentTimeMillis() - start > pythonInitTimeout) {
                 try {
                     shutdownBridge();
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                }
                 throw new IOException("Failed to start python process within timeout period");
             }
             try {
@@ -132,7 +205,7 @@ public class PythonBridge<T> implements Serializable {
                 if (wk != null) {
                     for (WatchEvent<?> e : wk.pollEvents()) {
                         Object createdFilePath = e.context();
-                        if (createdFilePath instanceof Path && ((Path)createdFilePath).endsWith("python_bridge_meta.done")) {
+                        if (createdFilePath instanceof Path && ((Path) createdFilePath).endsWith("python_bridge_meta.done")) {
                             initDone = true;
                             break;
                         }
@@ -141,13 +214,14 @@ public class PythonBridge<T> implements Serializable {
             } catch (InterruptedException e) {
                 try {
                     shutdownBridge();
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                }
                 throw new RuntimeException("Failed to start python bridge", e);
             }
         }
 
         // Initiate java-side client server with info passed in the created python meta
-        JsonNode bridgeMeta = new ObjectMapper().readTree(new File(this.envDir, "python_bridge_meta.json"));
+        JsonNode bridgeMeta = new ObjectMapper().readTree(new File(this.workDir, "python_bridge_meta.json"));
         this.bridgeServer = new ClientServer.ClientServerBuilder()
                 .authToken(bridgeMeta.get("token").asText())
                 .javaPort(bridgeMeta.get("java_port").asInt())
@@ -162,8 +236,9 @@ public class PythonBridge<T> implements Serializable {
     public void shutdownBridge() {
         try {
             executor.getWatchdog().destroyProcess();
-        } catch (Throwable ignored) {}
-        deleteRecurs(this.envDir);
+        } catch (Throwable ignored) {
+        }
+        deleteRecurs(this.workDir);
     }
 
     private void deleteRecurs(File parent) {
@@ -174,5 +249,12 @@ public class PythonBridge<T> implements Serializable {
             }
         }
         parent.delete();
+    }
+
+    private enum OSType {
+        WINDOWS,
+        MAC_DARWIN,
+        LINUX,
+        OTHER
     }
 }
