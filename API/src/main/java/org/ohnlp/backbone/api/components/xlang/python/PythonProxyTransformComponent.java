@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 public class PythonProxyTransformComponent extends TransformComponent implements XLangComponent, SingleInputComponent, SchemaInitializable {
 
     private String config;
+    private String envName;
+
     private String entryPoint;
     private String entryClass;
     private String bundleName;
@@ -37,6 +39,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     public void injectConfig(JsonNode config) {
         try {
             this.bundleName = config.get("python_bundle_name").asText();
+            this.envName = config.has("python_env_bundle") ? config.get("python_env_bundle").asText() : null;
             this.entryPoint = config.get("python_entry_point").asText();
             this.entryClass = config.get("python_entry_class").asText();
             this.config = new ObjectMapper().writer().writeValueAsString(config);
@@ -48,7 +51,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     @Override
     public void init() throws ComponentInitializationException {
         try {
-            PythonBridge<PythonBackbonePipelineComponent> python = new PythonBridge<>(this.bundleName, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
+            PythonBridge<PythonBackbonePipelineComponent> python = new PythonBridge<>(this.bundleName, this.envName, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
             python.startBridge();
             this.proxiedComponent = python.getPythonEntryPoint();
             this.proxiedComponent.init(this.config);
@@ -65,6 +68,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // as well
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
                 this.bundleName,
+                this.envName,
                 this.entryPoint,
                 this.entryClass,
                 this.proxiedComponent.to_do_fn_config());

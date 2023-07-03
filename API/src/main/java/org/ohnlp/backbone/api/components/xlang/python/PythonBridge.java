@@ -31,6 +31,7 @@ public class PythonBridge<T> implements Serializable {
     private final String entryPoint;
     private final String entryClass;
     private final Class<T> pythonEntryPointClass;
+    private final String envName;
     private transient File workDir;
     private transient File envDir;
     private transient DefaultExecutor executor;
@@ -38,8 +39,9 @@ public class PythonBridge<T> implements Serializable {
     private transient File launchFile;
     private transient OSType os;
 
-    public PythonBridge(String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
+    public PythonBridge(String bundleName, String envName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
         this.bundleName = bundleName;
+        this.envName = envName;
         this.entryPoint = entryPoint;
         this.entryClass = entryClass;
         this.pythonEntryPointClass = clazz;
@@ -66,7 +68,7 @@ public class PythonBridge<T> implements Serializable {
 
 
     public T getPythonEntryPoint() {
-        return (T) this.bridgeServer.getPythonServerEntryPoint(new Class<>[]{this.pythonEntryPointClass});
+        return (T) this.bridgeServer.getPythonServerEntryPoint(new Class[]{this.pythonEntryPointClass});
     }
 
     /*
@@ -85,7 +87,7 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // Extract the bundle itself
+        // Extract the python script itself
         try (ZipInputStream zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + this.bundleName))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -129,25 +131,60 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
-        TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
-        if (this.os.equals(OSType.WINDOWS)) {
-            unarchiver.setSourceFile(new File(this.workDir, "env-linux.tar.gz"));
-        } else {
-            if (this.os.equals(OSType.MAC_DARWIN)) {
-                Logger.getGlobal().warning("Macintosh/Darwin-based OS is currently not explicitly supported, " +
-                        "using linux environment as fallback. Unexpected behaviour may occur");
-
-            } else if (!this.os.equals(OSType.LINUX)) {
-                Logger.getGlobal().warning(System.getProperty("os.name") + " is currently not explicitly supported, " +
-                        "using linux environment as fallback. Unexpected behaviour may occur");
+        // Instantiate Conda Env
+        String localEnvName = "env_" + UUID.randomUUID().getLeastSignificantBits();
+        this.envDir = new File(this.workDir, localEnvName);
+        if (this.envName == null) {
+            // No pre-bundled environment... create conda environment live
+            String condaCmd = "conda env create -n $1 -f environment.yml --prefix $2".replace("$1", localEnvName).replace("$2", this.workDir.getAbsolutePath());
+            CommandLine cmdLine = CommandLine.parse(condaCmd);
+            this.executor = new DefaultExecutor();
+            this.executor.setWorkingDirectory(this.workDir);
+            try {
+                int result = this.executor.execute(cmdLine); // Blocking wait
+                if (result != 0) {
+                    throw new IOException("Conda environment instantiation failed with code " + result + " please check job logs");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            unarchiver.setSourceFile(new File(this.workDir, "env-linux.tar.gz"));
+        } else {
+            this.envDir.mkdirs();
+            // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
+            String osPath = "linux";
+            if (this.os.equals(OSType.WINDOWS)) {
+                osPath = "win32";
+            } else {
+                if (this.os.equals(OSType.MAC_DARWIN)) {
+                    osPath = "darwin";
+                } else if (!this.os.equals(OSType.LINUX)) {
+                    osPath = "unix";
+                }
+            }
+            File envTar;
+            try {
+                InputStream envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", osPath).replace("$2", this.envName));
+                if (envTarStream == null) {
+                    if (osPath.equals("unix")) {
+                        throw new IOException("Could not find declared bundled/offline environment " + this.envName + "for OS " + osPath + ", check your /python_envs folder or change settings to online/dynamic resolution mode.");
+                    } else {
+                        Logger.getGlobal().log(Level.WARNING, "Could not find declared bundled/offline environment " + this.envName + " for OS " + osPath + ", falling back to unix environment, unexpected behaviour may occur");
+                        envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", "unix").replace("$2", this.envName));
+                        if (envTarStream == null) {
+                            throw new IOException("Could not find declared bundled/offline environment " + this.envName + "for OS " + osPath + ", check your /python_envs folder or change settings to online/dynamic resolution mode.");
+                        }
+                    }
+                }
+                envTar = new File(this.workDir, "environment.tar.gz");
+                Files.copy(envTarStream, envTar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
+            unarchiver.setSourceFile(envTar);
+            unarchiver.setDestDirectory(this.envDir);
+            unarchiver.extract();
         }
-        this.envDir = new File(this.workDir, "env_" + UUID.randomUUID().getLeastSignificantBits());
-        this.envDir.mkdirs();
-        unarchiver.setDestDirectory(this.envDir);
-        unarchiver.extract();
     }
 
     /*
