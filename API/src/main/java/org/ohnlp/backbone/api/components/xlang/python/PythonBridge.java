@@ -171,14 +171,14 @@ public class PythonBridge<T> implements Serializable {
         }
         File envTar;
         try {
-            InputStream envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", osPath).replace("$2", this.bundleIdentifier));
+            InputStream envTarStream = findEnv(osPath);
             if (envTarStream == null) {
                 if (osPath.equals("unix")) {
                     Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting online/dynamic environment resolutions.");
                     dynamicallyResolveEnvironment(localEnvName);
                 } else {
                     Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting to fall back to unix environment, unexpected behaviour may occur");
-                    envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", "unix").replace("$2", this.bundleIdentifier));
+                    envTarStream = findEnv("unix");
                     if (envTarStream == null) {
                         Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS Unix, attempting online/dynamic environment resolutions.");
                         dynamicallyResolveEnvironment(localEnvName);
@@ -196,6 +196,17 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    private InputStream findEnv(String os) throws FileNotFoundException {
+        // First, try classpath
+        InputStream ret = this.getClass().getResourceAsStream("/python_envs/$1/$2".replace("$1", os).replace("$2", this.bundleIdentifier));
+        if (ret == null) {
+            File envFile = new File(new File("python_envs", os), this.bundleIdentifier);
+            if (envFile.exists()) {
+                ret = new FileInputStream(envFile);
+            }
+        }
+        return ret;
     }
 
     private void dynamicallyResolveEnvironment(String localEnvName) {
