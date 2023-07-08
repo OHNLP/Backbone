@@ -17,56 +17,37 @@
  */
 package org.apache.beam.sdk.io.jdbc;
 
-import static java.sql.JDBCType.BINARY;
-import static java.sql.JDBCType.CHAR;
-import static java.sql.JDBCType.LONGNVARCHAR;
-import static java.sql.JDBCType.LONGVARBINARY;
-import static java.sql.JDBCType.LONGVARCHAR;
-import static java.sql.JDBCType.NCHAR;
-import static java.sql.JDBCType.NUMERIC;
-import static java.sql.JDBCType.NVARCHAR;
-import static java.sql.JDBCType.VARBINARY;
-import static java.sql.JDBCType.VARCHAR;
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
-
-import java.io.Serializable;
-import java.sql.Array;
-import java.sql.Date;
-import java.sql.JDBCType;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import org.apache.beam.sdk.annotations.Experimental;
-import org.apache.beam.sdk.annotations.Experimental.Kind;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.Schema.FieldType;
+import org.apache.beam.sdk.schemas.logicaltypes.FixedPrecisionNumeric;
+import org.apache.beam.sdk.schemas.logicaltypes.FixedString;
+import org.apache.beam.sdk.schemas.logicaltypes.VariableBytes;
+import org.apache.beam.sdk.schemas.logicaltypes.VariableString;
 import org.apache.beam.sdk.values.Row;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.chrono.ISOChronology;
 
+import java.io.Serializable;
+import java.sql.Date;
+import java.sql.*;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.sql.JDBCType.*;
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
+
 /** Provides utility functions for working with Beam {@link Schema} types.
  * This is pretty much a copy-paste of the Beam SchemaUtil
  * except with removal of 0 precision check
  * since SQLite JDBC driver always returns 0 for precision
  */
-@Experimental(Kind.SCHEMAS)
 @SuppressWarnings({
         "nullness" // TODO(https://issues.apache.org/jira/browse/BEAM-10402)
 })
@@ -120,13 +101,13 @@ class SchemaUtilSQLite {
             case BIGINT:
                 return beamFieldOfType(Schema.FieldType.INT64);
             case BINARY:
-                return beamLogicalField(BINARY.getName(), LogicalTypes.FixedLengthBytes::of);
+                return beamLogicalField(BINARY.getName(), LogicalTypes::fixedOrVariableBytes);
             case BIT:
                 return beamFieldOfType(LogicalTypes.JDBC_BIT_TYPE);
             case BOOLEAN:
                 return beamFieldOfType(Schema.FieldType.BOOLEAN);
             case CHAR:
-                return beamLogicalField(CHAR.getName(), LogicalTypes.FixedLengthString::of);
+                return beamLogicalField(CHAR.getName(), FixedString::of);
             case DATE:
                 return beamFieldOfType(LogicalTypes.JDBC_DATE_TYPE);
             case DECIMAL:
@@ -138,17 +119,17 @@ class SchemaUtilSQLite {
             case INTEGER:
                 return beamFieldOfType(Schema.FieldType.INT32);
             case LONGNVARCHAR:
-                return beamLogicalField(LONGNVARCHAR.getName(), LogicalTypes.VariableLengthString::of);
+                return beamLogicalField(LONGNVARCHAR.getName(), VariableString::of);
             case LONGVARBINARY:
-                return beamLogicalField(LONGVARBINARY.getName(), LogicalTypes.VariableLengthBytes::of);
+                return beamLogicalField(LONGVARBINARY.getName(), VariableBytes::of);
             case LONGVARCHAR:
-                return beamLogicalField(LONGVARCHAR.getName(), LogicalTypes.VariableLengthString::of);
+                return beamLogicalField(LONGVARCHAR.getName(), VariableString::of);
             case NCHAR:
-                return beamLogicalField(NCHAR.getName(), LogicalTypes.FixedLengthString::of);
+                return beamLogicalField(NCHAR.getName(), FixedString::of);
             case NUMERIC:
-                return beamLogicalNumericField(NUMERIC.getName());
+                return beamLogicalNumericField();
             case NVARCHAR:
-                return beamLogicalField(NVARCHAR.getName(), LogicalTypes.VariableLengthString::of);
+                return beamLogicalField(NVARCHAR.getName(), VariableString::of);
             case REAL:
                 return beamFieldOfType(Schema.FieldType.FLOAT);
             case SMALLINT:
@@ -162,9 +143,9 @@ class SchemaUtilSQLite {
             case TINYINT:
                 return beamFieldOfType(Schema.FieldType.BYTE);
             case VARBINARY:
-                return beamLogicalField(VARBINARY.getName(), LogicalTypes.VariableLengthBytes::of);
+                return beamLogicalField(VARBINARY.getName(), VariableBytes::of);
             case VARCHAR:
-                return beamLogicalField(VARCHAR.getName(), LogicalTypes.VariableLengthString::of);
+                return beamLogicalField(VARCHAR.getName(), VariableString::of);
             case BLOB:
                 return beamFieldOfType(FieldType.BYTES);
             case CLOB:
@@ -221,10 +202,10 @@ class SchemaUtilSQLite {
 
     /**
      * Converts numeric fields with specified precision and scale to {@link
-     * LogicalTypes.FixedPrecisionNumeric}. If a precision of numeric field is not specified, then
+     * FixedPrecisionNumeric}. If a precision of numeric field is not specified, then
      * converts such field to {@link FieldType#DECIMAL}.
      */
-    private static BeamFieldConverter beamLogicalNumericField(String identifier) {
+    private static BeamFieldConverter beamLogicalNumericField() {
         return (index, md) -> {
             int precision = md.getPrecision(index);
             if (precision == Integer.MAX_VALUE || precision == -1) {
@@ -235,7 +216,7 @@ class SchemaUtilSQLite {
             int scale = md.getScale(index);
             Schema.FieldType fieldType =
                     Schema.FieldType.logicalType(
-                            LogicalTypes.FixedPrecisionNumeric.of(identifier, precision, scale));
+                            FixedPrecisionNumeric.of(precision, scale));
             return beamFieldOfType(fieldType).create(index, md);
         };
     }

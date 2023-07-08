@@ -2,6 +2,7 @@ package org.ohnlp.backbone.api.components.xlang.python;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -12,26 +13,24 @@ import py4j.ClientServer;
 import java.io.*;
 import java.net.InetAddress;
 import java.nio.file.*;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
 public class PythonBridge<T> implements Serializable {
     private final long pythonInitTimeout = 30000; // TODO make this configurable
-    private final String bundleName;
+    private final String bundleIdentifier;
     private final String entryPoint;
     private final String entryClass;
     private final Class<T> pythonEntryPointClass;
-    private final String envName;
     private transient File workDir;
     private transient File envDir;
     private transient DefaultExecutor executor;
@@ -39,9 +38,8 @@ public class PythonBridge<T> implements Serializable {
     private transient File launchFile;
     private transient OSType os;
 
-    public PythonBridge(String bundleName, String envName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
-        this.bundleName = bundleName;
-        this.envName = envName;
+    public PythonBridge(String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
+        this.bundleIdentifier = bundleName;
         this.entryPoint = entryPoint;
         this.entryClass = entryClass;
         this.pythonEntryPointClass = clazz;
@@ -87,8 +85,32 @@ public class PythonBridge<T> implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // Extract the python script itself
-        try (ZipInputStream zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + this.bundleName))) {
+        // Identify the correct python environment bundle and copy resources.
+        try {
+            ZipInputStream zis = null;
+            // - First try to scan classpath for registered_python_modules.json
+            try (InputStream is = getClass().getResourceAsStream("/registered_modules.json")) {
+                if (is == null) {
+                    // This is being run in a non-packaged environment, do a scan through python_modules
+                    Logger.getGlobal().warning("Attempting instantiation of python bridge from a Non-Packaged Environment. If this is occurring outside of pipeline configuration/setup, unexpected behaviour may occur on deployment. Falling back to scanning the python_modules folder");
+                    for (File f : new File("python_modules").listFiles()) {
+                        try (ZipFile zip = new ZipFile(f)) {
+                            ZipEntry entry = zip.getEntry("backbone_module.json");
+                            JsonNode on = new ObjectMapper().readTree(zip.getInputStream(entry));
+                            if (on.has("module_identifier") && on.get("module_identifier").asText().equals(this.bundleIdentifier)) {
+                                zis = new ZipInputStream(new FileInputStream(f));
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    JsonNode node = new ObjectMapper().readTree(is);
+                    zis = new ZipInputStream(getClass().getResourceAsStream("/python_modules/" + node.get(this.bundleIdentifier).asText()));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // - Now actually copy the resources over
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.isDirectory()) {
@@ -102,6 +124,7 @@ public class PythonBridge<T> implements Serializable {
                     fos.flush();
                 }
             }
+            zis.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -132,58 +155,65 @@ public class PythonBridge<T> implements Serializable {
             throw new RuntimeException(e);
         }
         // Instantiate Conda Env
-        String localEnvName = "env_" + UUID.randomUUID().getLeastSignificantBits();
+        String localEnvName = "env";
         this.envDir = new File(this.workDir, localEnvName);
-        if (this.envName == null) {
-            // No pre-bundled environment... create conda environment live
-            String condaCmd = "conda env create -n $1 -f environment.yml --prefix $2".replace("$1", localEnvName).replace("$2", this.workDir.getAbsolutePath());
-            CommandLine cmdLine = CommandLine.parse(condaCmd);
-            this.executor = new DefaultExecutor();
-            this.executor.setWorkingDirectory(this.workDir);
-            try {
-                int result = this.executor.execute(cmdLine); // Blocking wait
-                if (result != 0) {
-                    throw new IOException("Conda environment instantiation failed with code " + result + " please check job logs");
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        this.envDir.mkdirs();
+        // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
+        String osPath = "linux";
+        if (this.os.equals(OSType.WINDOWS)) {
+            osPath = "win32";
         } else {
-            this.envDir.mkdirs();
-            // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
-            String osPath = "linux";
-            if (this.os.equals(OSType.WINDOWS)) {
-                osPath = "win32";
-            } else {
-                if (this.os.equals(OSType.MAC_DARWIN)) {
-                    osPath = "darwin";
-                } else if (!this.os.equals(OSType.LINUX)) {
-                    osPath = "unix";
-                }
+            if (this.os.equals(OSType.MAC_DARWIN)) {
+                osPath = "darwin";
+            } else if (!this.os.equals(OSType.LINUX)) {
+                osPath = "unix";
             }
-            File envTar;
-            try {
-                InputStream envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", osPath).replace("$2", this.envName));
-                if (envTarStream == null) {
-                    if (osPath.equals("unix")) {
-                        throw new IOException("Could not find declared bundled/offline environment " + this.envName + "for OS " + osPath + ", check your /python_envs folder or change settings to online/dynamic resolution mode.");
-                    } else {
-                        Logger.getGlobal().log(Level.WARNING, "Could not find declared bundled/offline environment " + this.envName + " for OS " + osPath + ", falling back to unix environment, unexpected behaviour may occur");
-                        envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", "unix").replace("$2", this.envName));
-                        if (envTarStream == null) {
-                            throw new IOException("Could not find declared bundled/offline environment " + this.envName + "for OS " + osPath + ", check your /python_envs folder or change settings to online/dynamic resolution mode.");
-                        }
+        }
+        File envTar;
+        try {
+            InputStream envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", osPath).replace("$2", this.bundleIdentifier));
+            if (envTarStream == null) {
+                if (osPath.equals("unix")) {
+                    Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting online/dynamic environment resolutions.");
+                    dynamicallyResolveEnvironment(localEnvName);
+                } else {
+                    Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting to fall back to unix environment, unexpected behaviour may occur");
+                    envTarStream = this.getClass().getResourceAsStream("/python_envs/$1/$2.tar.gz".replace("$1", "unix").replace("$2", this.bundleIdentifier));
+                    if (envTarStream == null) {
+                        Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS Unix, attempting online/dynamic environment resolutions.");
+                        dynamicallyResolveEnvironment(localEnvName);
                     }
                 }
+            }
+            if (envTarStream != null) {
                 envTar = new File(this.workDir, "environment.tar.gz");
                 Files.copy(envTarStream, envTar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
+                unarchiver.setSourceFile(envTar);
+                unarchiver.setDestDirectory(this.envDir);
+                unarchiver.extract();
             }
-            TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
-            unarchiver.setSourceFile(envTar);
-            unarchiver.setDestDirectory(this.envDir);
-            unarchiver.extract();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void dynamicallyResolveEnvironment(String localEnvName) {
+        // No pre-bundled environment... create conda environment live
+        List<String> command = new ArrayList<>();
+        if (this.os.equals(OSType.WINDOWS)) { // run via a cmd call instead of directly
+            command.addAll(Arrays.asList("cmd.exe", "/c"));
+        }
+        command.add("conda");
+        command.addAll(Arrays.asList("env", "create", "-f", "environment.yml", "--prefix", localEnvName));
+        ProcessBuilder pb = new ProcessBuilder().directory(this.workDir).command(command).inheritIO();
+        try {
+            int result = pb.start().waitFor();
+            if (result != 0) {
+                throw new IOException("Conda environment instantiation failed with code " + result + " please check job logs");
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -198,9 +228,10 @@ public class PythonBridge<T> implements Serializable {
         // TODO this does NOT activate conda/fix prefixes, which may cause issues with some libraries
         // TODO Consider doing the full conda-unpack routine in a future release
         // See: https://conda.github.io/conda-pack/ under "Commandline Usage"
+        String pythonPath = os.equals(OSType.WINDOWS) ? new File(this.envDir, "python.exe").getAbsolutePath() : new File(new File(this.envDir, "bin"), "python").getAbsolutePath();
         String cmd = String.join(" ",
-                new File(new File(this.envDir, "bin"), "python").getAbsolutePath(),
-                "backbone_launcher.py",
+                pythonPath,
+                this.launchFile.getName(),
                 entryPoint,
                 entryClass,
                 this.pythonEntryPointClass.equals(PythonBackbonePipelineComponent.class) ? "component" : "dofn");
@@ -229,6 +260,7 @@ public class PythonBridge<T> implements Serializable {
         // Wait for python process to start and the python_bridge_meta.done file to be created
         long start = System.currentTimeMillis();
         boolean initDone = false;
+        File watchFile = new File(this.workDir, "python_bridge_meta.done");
         while (!initDone) {
             if (System.currentTimeMillis() - start > pythonInitTimeout) {
                 try {
@@ -238,15 +270,10 @@ public class PythonBridge<T> implements Serializable {
                 throw new IOException("Failed to start python process within timeout period");
             }
             try {
-                WatchKey wk = watcher.poll(25, TimeUnit.MILLISECONDS);
-                if (wk != null) {
-                    for (WatchEvent<?> e : wk.pollEvents()) {
-                        Object createdFilePath = e.context();
-                        if (createdFilePath instanceof Path && ((Path) createdFilePath).endsWith("python_bridge_meta.done")) {
-                            initDone = true;
-                            break;
-                        }
-                    }
+                if (!watchFile.exists()) {
+                    Thread.sleep(1000);
+                } else {
+                    break;
                 }
             } catch (InterruptedException e) {
                 try {
@@ -267,7 +294,8 @@ public class PythonBridge<T> implements Serializable {
                 .pythonAddress(InetAddress.getLoopbackAddress())
                 .build();
         this.bridgeServer.startServer();
-        Logger.getGlobal().log(Level.INFO, "Successfully started python binding for " + entryPoint + " on " + InetAddress.getLoopbackAddress() + " port " + bridgeMeta.get("port").asInt());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdownBridge()));
+        Logger.getGlobal().log(Level.INFO, "Successfully started python binding for " + entryPoint + " on " + InetAddress.getLoopbackAddress() + " port " + bridgeMeta.get("python_port").asInt());
     }
 
     public void shutdownBridge() {

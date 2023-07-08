@@ -31,4 +31,6 @@ public abstract class BackbonePipelineComponent<I extends PInput, O extends POut
      * @throws ValidationError if a validation error occurs.
      */
     public abstract void validate() throws ValidationError;
+
+    public void teardown() {}
 }

@@ -28,20 +28,22 @@ import java.util.stream.Collectors;
 public class PythonProxyTransformComponent extends TransformComponent implements XLangComponent, SingleInputComponent, SchemaInitializable {
 
     private String config;
-    private String envName;
 
     private String entryPoint;
     private String entryClass;
-    private String bundleName;
+    private String bundleIdentifier;
     private PythonBackbonePipelineComponent proxiedComponent;
+    private PythonBridge<PythonBackbonePipelineComponent> python;
+
+    public PythonProxyTransformComponent(String bundleIdentifier, String entryPoint, String entryClass) {
+        this.entryPoint = entryPoint;
+        this.entryClass = entryClass;
+        this.bundleIdentifier = bundleIdentifier;
+    }
 
     @Override
     public void injectConfig(JsonNode config) {
         try {
-            this.bundleName = config.get("python_bundle_name").asText();
-            this.envName = config.has("python_env_bundle") ? config.get("python_env_bundle").asText() : null;
-            this.entryPoint = config.get("python_entry_point").asText();
-            this.entryClass = config.get("python_entry_class").asText();
             this.config = new ObjectMapper().writer().writeValueAsString(config);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -51,7 +53,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     @Override
     public void init() throws ComponentInitializationException {
         try {
-            PythonBridge<PythonBackbonePipelineComponent> python = new PythonBridge<>(this.bundleName, this.envName, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
+            this.python = new PythonBridge<>(this.bundleIdentifier, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
             python.startBridge();
             this.proxiedComponent = python.getPythonEntryPoint();
             this.proxiedComponent.init(this.config);
@@ -61,14 +63,18 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     }
 
     @Override
+    public void teardown() {
+        this.python.shutdownBridge();
+    }
+
+    @Override
     public PCollectionRowTuple expand(PCollectionRowTuple input) {
         Map<String, PCollection<Row>> collMap = input.getAll();
         PCollection<Row> inputColl = collMap.get(collMap.keySet().toArray(new String[0])[0]);
         // Get a proxied python DoFn that handles bridge setup on executor nodes, and pass it initialized driver configs
         // as well
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
-                this.bundleName,
-                this.envName,
+                this.bundleIdentifier,
                 this.entryPoint,
                 this.entryClass,
                 this.proxiedComponent.to_do_fn_config());
@@ -106,7 +112,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
 
     @Override
     public List<String> getOutputTags() {
-        return proxiedComponent.get_output_tags();
+        return proxiedComponent.proxied_get_output_tags();
     }
 
     @Override
@@ -124,7 +130,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
             inputSchemas.put(tag, this.proxiedComponent.python_schema_from_json_string(jsonSchema));
         });
         // Perform the actual output schema derivation in the proxied python component
-        Map<String, PythonSchema> jsonifiedOutputSchema = this.proxiedComponent.calculate_output_schema(inputSchemas);
+        Map<String, PythonSchema> jsonifiedOutputSchema = this.proxiedComponent.proxied_calculate_output_schema(inputSchemas);
         // And map this back to java Schemas
         Map<String, Schema> outputSchema = new HashMap<>();
         jsonifiedOutputSchema.forEach((tag, schema) -> {

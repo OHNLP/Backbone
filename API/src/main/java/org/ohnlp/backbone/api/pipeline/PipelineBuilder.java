@@ -13,6 +13,8 @@ import org.ohnlp.backbone.api.components.legacy.v2.WrappedExtract;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedLoad;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
 import org.ohnlp.backbone.api.components.xlang.python.PythonProxyTransformComponent;
+import org.ohnlp.backbone.api.config.xlang.JavaBackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.api.config.xlang.PythonBackbonePipelineComponentConfiguration;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
@@ -52,9 +54,9 @@ public class PipelineBuilder {
                     configs[i].setComponentID(i + "");
                 }
                 ComponentLang componentLang = configs[i].getLang();
-                if (componentLang.equals(ComponentLang.JAVA)) {
+                if (configs[i] instanceof JavaBackbonePipelineComponentConfiguration) {
                     // Handle Java Initialization
-                    if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(configs[i].getClazz())) {
+                    if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(((JavaBackbonePipelineComponentConfiguration)configs[i]).getClazz())) {
                         LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
                                 "used with a Backbone v3.0+ installation. Input/Output associations between " +
                                 "different components are being inferred. Running the configuration update script " +
@@ -65,7 +67,7 @@ public class PipelineBuilder {
                         generatedDef.setInputTag("*");
                         configs[i].setInputs(Collections.singletonMap("*", generatedDef));
                     }
-                    Class<? extends BackbonePipelineComponent> clazz = configs[i].getClazz();
+                    Class<? extends BackbonePipelineComponent> clazz = ((JavaBackbonePipelineComponentConfiguration)configs[i]).getClazz();
                     Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
                     BackbonePipelineComponent instance = ctor.newInstance();
                     JsonNode configForInstance = configs[i].getConfig();
@@ -86,9 +88,10 @@ public class PipelineBuilder {
                     if (instance instanceof ExtractComponent) {
                         extracts.add(configs[i].getComponentID());
                     }
-                } else if (componentLang.equals(ComponentLang.PYTHON)) {
-                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent();
-                    JsonNode configForInstance = configs[i].getConfig();
+                } else if (configs[i] instanceof PythonBackbonePipelineComponentConfiguration) {
+                    PythonBackbonePipelineComponentConfiguration pythonconfig = (PythonBackbonePipelineComponentConfiguration) configs[i];
+                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
+                    JsonNode configForInstance = pythonconfig.getConfig();
                     instance.injectConfig(configForInstance);
                     instance.init();
                     componentsByID.put(configs[i].getComponentID(), new InitializedPipelineComponent(configs[i].getComponentID(), configs[i].getInputs(), instance));
@@ -113,7 +116,7 @@ public class PipelineBuilder {
     private static void injectInstanceWithConfigurationProperties(
             Class<? extends BackbonePipelineComponent> clazz,
             BackbonePipelineComponent instance,
-            JsonNode configForInstance) throws JsonProcessingException, IllegalAccessException {
+            JsonNode configForInstance) throws IllegalAccessException {
         ObjectMapper om = new ObjectMapper();
         for (Field f : clazz.getDeclaredFields()) {
             if (f.isAnnotationPresent(ConfigurationProperty.class)) {

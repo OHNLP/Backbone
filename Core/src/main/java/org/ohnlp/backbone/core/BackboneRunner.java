@@ -22,6 +22,8 @@ public class BackboneRunner {
         graph.planDAG(p);
         // Now run
         p.run().waitUntilFinish();
+        // And cleanup
+        graph.teardown();
         // - Done
         System.out.println("Pipeline complete");
         System.exit(0);

@@ -22,11 +22,11 @@ public interface PythonBackbonePipelineComponent extends PythonStructureProxy {
     /**
      * @return A list of one or more labels/tags for expected outputs
      */
-    List<String> get_output_tags();
+    List<String> proxied_get_output_tags();
 
     /**
      * @param input_schemas The schemas being input
      * @return A derived output schema from the supplied input schema
      */
-    Map<String, PythonSchema> calculate_output_schema(Map<String, PythonSchema> input_schemas);
+    Map<String, PythonSchema> proxied_calculate_output_schema(Map<String, PythonSchema> input_schemas);
 }
