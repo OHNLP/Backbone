@@ -2,7 +2,6 @@ package org.ohnlp.backbone.api.components.xlang.python;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -14,7 +13,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -37,6 +36,7 @@ public class PythonBridge<T> implements Serializable {
     private transient ClientServer bridgeServer;
     private transient File launchFile;
     private transient OSType os;
+    private AtomicBoolean postEnvCreationCleanupComplete;
 
     public PythonBridge(String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
         this.bundleIdentifier = bundleName;
@@ -46,6 +46,12 @@ public class PythonBridge<T> implements Serializable {
     }
 
     public void startBridge() throws IOException {
+        this.postEnvCreationCleanupComplete = new AtomicBoolean(false);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (!postEnvCreationCleanupComplete.get()) {
+                shutdownBridge();
+            }
+        }));
         detectOS();
         extractPythonResources();
         startServer();
@@ -217,13 +223,15 @@ public class PythonBridge<T> implements Serializable {
         }
         command.add("conda");
         command.addAll(Arrays.asList("env", "create", "-f", "environment.yml", "--prefix", localEnvName));
-        ProcessBuilder pb = new ProcessBuilder().directory(this.workDir).command(command).inheritIO();
+        CommandLine cmdLine = CommandLine.parse(String.join(" ", command));
+        this.executor = new DefaultExecutor(); // Can be safely set because conda is guaranteed to exit before python process is started
+        this.executor.setWorkingDirectory(this.workDir);
         try {
-            int result = pb.start().waitFor();
+            int result = this.executor .execute(cmdLine);
             if (result != 0) {
                 throw new IOException("Conda environment instantiation failed with code " + result + " please check job logs");
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -305,19 +313,22 @@ public class PythonBridge<T> implements Serializable {
                 .pythonAddress(InetAddress.getLoopbackAddress())
                 .build();
         this.bridgeServer.startServer();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdownBridge()));
         Logger.getGlobal().log(Level.INFO, "Successfully started python binding for " + entryPoint + " on " + InetAddress.getLoopbackAddress() + " port " + bridgeMeta.get("python_port").asInt());
     }
 
-    public void shutdownBridge() {
+    public synchronized final void shutdownBridge() {
         try {
             executor.getWatchdog().destroyProcess();
         } catch (Throwable ignored) {
         }
         deleteRecurs(this.workDir);
+        postEnvCreationCleanupComplete.set(true);
     }
 
     private void deleteRecurs(File parent) {
+        if (!parent.exists()) {
+            return;
+        }
         File[] children = parent.listFiles();
         if (children != null) {
             for (File file : children) {
