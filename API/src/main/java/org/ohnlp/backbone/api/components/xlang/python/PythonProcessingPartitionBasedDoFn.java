@@ -24,5 +24,5 @@ public interface PythonProcessingPartitionBasedDoFn<I, O> extends PythonStructur
      * @param input a single input record
      * @return A list of output records
      */
-    List<O> apply(I input);
+    List<O> proxied_apply(I input);
 }

@@ -1,9 +1,15 @@
 package org.ohnlp.backbone.api.config.xlang;
 
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
+import org.ohnlp.backbone.api.ComponentLang;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 
 public class JavaBackbonePipelineComponentConfiguration extends BackbonePipelineComponentConfiguration {
+
+    public JavaBackbonePipelineComponentConfiguration() {
+        setLang(ComponentLang.JAVA);
+    }
+
     /**
      * The class of the pipeline component, should extend {@link BackbonePipelineComponent}
      */

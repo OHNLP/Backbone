@@ -55,10 +55,10 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
         String input = pc.element();
         PythonRow inputRow = this.proxiedDoFn.python_row_from_json_string(input);
         if (this.proxiedDoFn instanceof PythonOneToOneTransformDoFn) {
-            ((PythonOneToOneTransformDoFn)this.proxiedDoFn).apply(inputRow).forEach(r ->
+            ((PythonOneToOneTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r ->
                     pc.output(this.proxiedDoFn.json_string_from_python_row(r)));
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
-            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).apply(inputRow).forEach(r ->
+            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r ->
                     pc.output(new TupleTag<>(r.get_tag()), this.proxiedDoFn.json_string_from_python_row(r.get_row())));
         } // TODO other types
     }

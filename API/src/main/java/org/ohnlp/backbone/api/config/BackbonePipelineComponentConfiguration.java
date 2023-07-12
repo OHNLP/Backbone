@@ -30,8 +30,7 @@ public class BackbonePipelineComponentConfiguration {
     /**
      * The component lang
      */
-    @JsonSetter(nulls = Nulls.SKIP)
-    private ComponentLang lang = ComponentLang.JAVA;
+    private ComponentLang lang;
 
     /**
      * An ID for this step. Defaults to the numeric index of this step in the pipeline

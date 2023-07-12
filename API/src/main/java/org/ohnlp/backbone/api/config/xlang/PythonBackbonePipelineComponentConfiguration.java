@@ -1,12 +1,16 @@
 package org.ohnlp.backbone.api.config.xlang;
 
+import org.ohnlp.backbone.api.ComponentLang;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 
 public class PythonBackbonePipelineComponentConfiguration extends BackbonePipelineComponentConfiguration {
     String bundleName;
-    String envName;
     String entryPoint;
     String entryClass;
+
+    public PythonBackbonePipelineComponentConfiguration() {
+        setLang(ComponentLang.PYTHON);
+    }
 
     public String getBundleName() {
         return bundleName;
@@ -14,14 +18,6 @@ public class PythonBackbonePipelineComponentConfiguration extends BackbonePipeli
 
     public void setBundleName(String bundleName) {
         this.bundleName = bundleName;
-    }
-
-    public String getEnvName() {
-        return envName;
-    }
-
-    public void setEnvName(String envName) {
-        this.envName = envName;
     }
 
     public String getEntryPoint() {
