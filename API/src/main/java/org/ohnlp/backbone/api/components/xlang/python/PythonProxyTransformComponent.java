@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -98,8 +99,9 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // Map individual tag outputs back to Beam Rows
         PCollectionRowTuple rowRet = PCollectionRowTuple.empty(pythonOutStringJSON.getPipeline());
         for (String output : getOutputTags()) {
-            rowRet = rowRet.and(output, pythonOutStringJSON.<String>get(output).apply("Convert Python Rows to Java Rows",
-                    ParDo.of(new JsonToRow(getComponentSchema().get(output)))));
+            Schema outputSchema = getComponentSchema().get(output);
+            rowRet = rowRet.and(output, pythonOutStringJSON.<String>get(output).setCoder(StringUtf8Coder.of()).apply("Convert Python Rows to Java Rows",
+                    ParDo.of(new JsonToRow(outputSchema))).setRowSchema(outputSchema));
         }
         return rowRet;
     }

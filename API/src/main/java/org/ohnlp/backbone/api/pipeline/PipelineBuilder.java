@@ -53,7 +53,6 @@ public class PipelineBuilder {
                 if (configs[i].getComponentID() == null) {
                     configs[i].setComponentID(i + "");
                 }
-                ComponentLang componentLang = configs[i].getLang();
                 if (configs[i] instanceof JavaBackbonePipelineComponentConfiguration) {
                     // Handle Java Initialization
                     if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(((JavaBackbonePipelineComponentConfiguration)configs[i]).getClazz())) {
