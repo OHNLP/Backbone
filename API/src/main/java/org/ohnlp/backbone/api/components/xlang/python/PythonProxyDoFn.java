@@ -18,22 +18,36 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     private final String doFnEntryPoint;
     private final String doFnEntryClass;
     private final String driverInfo;
+    private final boolean multiInput;
+    private final boolean multiOutput;
 
-    private transient PythonBridge<PythonProcessingPartitionBasedDoFn> python;
+    private transient PythonBridge<? extends PythonProcessingPartitionBasedDoFn<?, ?>> python;
     private transient PythonProcessingPartitionBasedDoFn<?, ?> proxiedDoFn;
 
-    public PythonProxyDoFn(String bundleName,  String doFnEntryPoint, String doFnEntryClass, String infoFromDriver) {
+    public PythonProxyDoFn(String bundleName,  String doFnEntryPoint, String doFnEntryClass, String infoFromDriver, boolean multiInput, boolean multiOutput) {
         this.bundleName = bundleName;
         this.doFnEntryPoint = doFnEntryPoint;
         this.doFnEntryClass = doFnEntryClass;
         this.driverInfo = infoFromDriver;
+        this.multiInput = multiInput;
+        this.multiOutput = multiOutput;
     }
 
 
     @Setup
     public void init() throws IOException {
+        Class<? extends PythonProcessingPartitionBasedDoFn<?, ?>> implCls = null;
+        if (multiInput) {
+            throw new UnsupportedOperationException("Multi-Input Python Transforms are currently not supported");
+        } else {
+            if (multiOutput) {
+                implCls = PythonOneToManyTransformDoFn.class;
+            } else {
+                implCls = PythonOneToOneTransformDoFn.class;
+            }
+        }
         // Init python bridge
-        this.python = new PythonBridge<>(this.bundleName, this.doFnEntryPoint, this.doFnEntryClass, PythonProcessingPartitionBasedDoFn.class);
+        this.python = new PythonBridge<>(this.bundleName, this.doFnEntryPoint, this.doFnEntryClass, implCls);
         this.python.startBridge();
 
         // Get proxied DoFn
@@ -53,14 +67,20 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     public void process(ProcessContext pc) {
         // String => String since the requisite PTransform would have already handled conversion to/from JSON
         String input = pc.element();
+        System.out.println("ProxyParDo: Processing " + input);
         PythonRow inputRow = this.proxiedDoFn.python_row_from_json_string(input);
+        System.out.println("Sending converted row to apply: " + inputRow.toString());
         if (this.proxiedDoFn instanceof PythonOneToOneTransformDoFn) {
             ((PythonOneToOneTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r ->
                     pc.output(this.proxiedDoFn.json_string_from_python_row(r)));
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
-            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r ->
-                    pc.output(new TupleTag<>(r.get_tag()), this.proxiedDoFn.json_string_from_python_row(r.get_row())));
-        } // TODO other types
+            ((PythonOneToManyTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r -> {
+                System.out.println("Received from apply: " + r.get_row());
+                pc.output(new TupleTag<>(r.get_tag()), this.proxiedDoFn.json_string_from_python_row(r.get_row()));
+            });
+        } else {
+            throw new UnsupportedOperationException("Unsupported DoFn Class Type " + this.proxiedDoFn.getClass().getName()); // TODO other types
+        }
     }
 
     @FinishBundle

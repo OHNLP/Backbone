@@ -77,7 +77,9 @@ public class PythonProxyTransformComponent extends TransformComponent implements
                 this.bundleIdentifier,
                 this.entryPoint,
                 this.entryClass,
-                this.proxiedComponent.to_do_fn_config());
+                this.proxiedComponent.to_do_fn_config(),
+                this.getInputTags().size() > 1,
+                this.getOutputTags().size() > 1);
         PCollection<String> pythonInput = inputColl.apply("Python" + this.entryPoint + ": Convert Java Rows to JSON for Python Transfer",
                 ParDo.of(new RowToJson(inputColl.getSchema())));
         // Figure out what output tags are actually present and construct relevant tag lists

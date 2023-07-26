@@ -165,7 +165,7 @@ public class PythonBridge<T> implements Serializable {
         String localEnvName = "env";
         this.envDir = new File(this.workDir, localEnvName);
         this.envDir.mkdirs();
-        // Extract the packaged conda env TODO: instantiate live instead if not standalone and can be run offline
+        // Extract the packaged conda env
         String osPath = "linux";
         if (this.os.equals(OSType.WINDOWS)) {
             osPath = "win32";
