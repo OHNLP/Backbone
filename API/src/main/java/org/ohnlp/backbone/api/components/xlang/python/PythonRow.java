@@ -6,5 +6,6 @@ public interface PythonRow {
     PythonSchema get_schema();
     Object get_value(String column);
     List<Object> get_values();
+    void set_value(String colName, Object value);
 
 }
