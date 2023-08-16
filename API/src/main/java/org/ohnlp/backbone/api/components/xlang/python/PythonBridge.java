@@ -8,7 +8,6 @@ import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
 import py4j.ClientServer;
 
 import java.io.*;
-import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.file.*;
@@ -19,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -34,6 +32,7 @@ public class PythonBridge<T> implements Serializable {
 
     private static final ConcurrentHashMap<String, CompletableFuture<PythonEnvironment>> JVM_ENVIRONMENTS_BY_BUNDLE_ID
             = new ConcurrentHashMap<>();
+    private static final ConcurrentLinkedQueue<DefaultExecutor> JVM_SUBPROCESS_REFERENCES = new ConcurrentLinkedQueue<>();
     public static boolean CLEANUP_ENVS_ON_SHUTDOWN = true;
     private final long pythonInitTimeout = 30000; // TODO make this configurable
     private final String bundleIdentifier;
@@ -334,7 +333,9 @@ public class PythonBridge<T> implements Serializable {
         command.addAll(Arrays.asList("env", "create", "-f", "environment.yml", "--prefix", localEnvName));
         CommandLine cmdLine = CommandLine.parse(String.join(" ", command));
         this.executor = new DefaultExecutor(); // Can be safely set because conda is guaranteed to exit before python process is started
+        this.executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
+        JVM_SUBPROCESS_REFERENCES.add(this.executor);
         this.executor.setWorkingDirectory(workDir);
         try {
             int result = this.executor.execute(cmdLine);
@@ -377,6 +378,7 @@ public class PythonBridge<T> implements Serializable {
         this.executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         this.executor.setWorkingDirectory(env.workDir);
         this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
+        JVM_SUBPROCESS_REFERENCES.add(this.executor);
         try {
             this.executor.execute(cmdLine, new ExecuteResultHandler() {
                 @Override
@@ -483,6 +485,13 @@ public class PythonBridge<T> implements Serializable {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Cleanup Threads
+            for (DefaultExecutor executor : JVM_SUBPROCESS_REFERENCES) {
+                try {
+                    executor.getWatchdog().destroyProcess();
+                } catch (Throwable ignored) {}
+            }
+            // Cleanup Envs
             if (CLEANUP_ENVS_ON_SHUTDOWN) {
                 for (CompletableFuture<PythonEnvironment> env : JVM_ENVIRONMENTS_BY_BUNDLE_ID.values()) {
                     try {
