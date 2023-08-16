@@ -3,14 +3,12 @@ package org.ohnlp.backbone.api.components.xlang.python;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.*;
 import org.codehaus.plexus.archiver.tar.TarGZipUnArchiver;
 import py4j.ClientServer;
 
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.file.*;
@@ -19,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
@@ -46,7 +45,6 @@ public class PythonBridge<T> implements Serializable {
     private transient ClientServer bridgeServer;
     private transient File launchFile;
     private transient OSType os;
-    private AtomicBoolean postEnvCreationCleanupComplete;
 
     public PythonBridge(File tmpDir, String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
         this.tmpDir = tmpDir;
@@ -57,12 +55,6 @@ public class PythonBridge<T> implements Serializable {
     }
 
     public void startBridge() throws IOException {
-        this.postEnvCreationCleanupComplete = new AtomicBoolean(false);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (!postEnvCreationCleanupComplete.get()) {
-                shutdownBridge();
-            }
-        }));
         detectOS();
         extractPythonResourcesIfNotExists();
         startServer();
@@ -342,6 +334,7 @@ public class PythonBridge<T> implements Serializable {
         command.addAll(Arrays.asList("env", "create", "-f", "environment.yml", "--prefix", localEnvName));
         CommandLine cmdLine = CommandLine.parse(String.join(" ", command));
         this.executor = new DefaultExecutor(); // Can be safely set because conda is guaranteed to exit before python process is started
+        this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
         this.executor.setWorkingDirectory(workDir);
         try {
             int result = this.executor.execute(cmdLine);
@@ -381,7 +374,9 @@ public class PythonBridge<T> implements Serializable {
                 id);
         CommandLine cmdLine = CommandLine.parse(cmd);
         this.executor = new DefaultExecutor();
+        this.executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         this.executor.setWorkingDirectory(env.workDir);
+        this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
         try {
             this.executor.execute(cmdLine, new ExecuteResultHandler() {
                 @Override
@@ -446,7 +441,6 @@ public class PythonBridge<T> implements Serializable {
             executor.getWatchdog().destroyProcess();
         } catch (Throwable ignored) {
         }
-        postEnvCreationCleanupComplete.set(true);
     }
 
     private static void deleteRecurs(File parent) {
