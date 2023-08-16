@@ -20,6 +20,7 @@ import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 import org.ohnlp.backbone.api.util.SchemaConfigUtils;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -89,7 +90,7 @@ public class PipelineBuilder {
                     }
                 } else if (configs[i] instanceof PythonBackbonePipelineComponentConfiguration) {
                     PythonBackbonePipelineComponentConfiguration pythonconfig = (PythonBackbonePipelineComponentConfiguration) configs[i];
-                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
+                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(new File(System.getProperty("java.io.tmpdir")), pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
                     JsonNode configForInstance = pythonconfig.getConfig();
                     instance.injectConfig(configForInstance);
                     instance.init();

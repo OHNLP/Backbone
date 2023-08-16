@@ -21,12 +21,16 @@ import org.ohnlp.backbone.api.components.XLangComponent;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.api.util.SchemaConfigUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class PythonProxyTransformComponent extends TransformComponent implements XLangComponent, SingleInputComponent, SchemaInitializable {
 
+    private File envTmp;
     private String config;
 
     private String entryPoint;
@@ -34,8 +38,13 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     private String bundleIdentifier;
     private PythonBackbonePipelineComponent proxiedComponent;
     private PythonBridge<PythonBackbonePipelineComponent> python;
+    private AtomicBoolean INIT_LOCK = new AtomicBoolean(true);
+    private AtomicBoolean INIT_IN_PROGRESS = new AtomicBoolean(false);
+    private final AtomicBoolean INIT_COMPLETE = new AtomicBoolean(false);
+    private final AtomicReference<ComponentInitializationException> INIT_ERROR = new AtomicReference(null);
 
-    public PythonProxyTransformComponent(String bundleIdentifier, String entryPoint, String entryClass) {
+    public PythonProxyTransformComponent(File envTmp, String bundleIdentifier, String entryPoint, String entryClass) {
+        this.envTmp = envTmp;
         this.entryPoint = entryPoint;
         this.entryClass = entryClass;
         this.bundleIdentifier = bundleIdentifier;
@@ -52,13 +61,40 @@ public class PythonProxyTransformComponent extends TransformComponent implements
 
     @Override
     public void init() throws ComponentInitializationException {
-        try {
-            this.python = new PythonBridge<>(this.bundleIdentifier, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
-            python.startBridge();
-            this.proxiedComponent = python.getPythonEntryPoint();
-            this.proxiedComponent.init(this.config);
-        } catch (IOException e) {
-            throw new ComponentInitializationException(new RuntimeException("Error initializing python bridge", e));
+        if (INIT_LOCK.getAndSet(false)) { // Acquired Lock
+            if (!INIT_IN_PROGRESS.getAndSet(true)) {
+                try {
+                    this.python = new PythonBridge<>(this.envTmp, this.bundleIdentifier, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
+                    this.python.startBridge();
+                    this.proxiedComponent = python.getPythonEntryPoint();
+                    this.proxiedComponent.init(this.config);
+                    synchronized (this.INIT_COMPLETE) {
+                        this.INIT_COMPLETE.set(true);
+                        this.INIT_COMPLETE.notifyAll();
+                    }
+                } catch (IOException e) {
+                    INIT_ERROR.set(new ComponentInitializationException(new RuntimeException("Error initializing python bridge", e)));
+                    throw INIT_ERROR.get();
+                }
+            } else {
+                while (!INIT_COMPLETE.get()) {
+                    if (INIT_ERROR.get() != null) {
+                        throw INIT_ERROR.get();
+                    }
+                    try {
+                        this.INIT_COMPLETE.wait(1000);
+                    } catch (InterruptedException ignored) {}
+                }
+            }
+        } else {
+            while (!INIT_COMPLETE.get()) {
+                if (INIT_ERROR.get() != null) {
+                    throw INIT_ERROR.get();
+                }
+                try {
+                    this.INIT_COMPLETE.wait(1000);
+                } catch (InterruptedException ignored) {}
+            }
         }
     }
 
@@ -74,6 +110,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // Get a proxied python DoFn that handles bridge setup on executor nodes, and pass it initialized driver configs
         // as well
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
+                this.envTmp,
                 this.bundleIdentifier,
                 this.entryPoint,
                 this.entryClass,
@@ -192,9 +229,9 @@ public class PythonProxyTransformComponent extends TransformComponent implements
                 if (!(input instanceof Collection)) {
                     throw new IllegalArgumentException("Schema mismatch, expected collection received type " + input.getClass().getName());
                 }
-                ArrayNode ret = JsonNodeFactory.instance.arrayNode(((Collection<?>)input).size());
+                ArrayNode ret = JsonNodeFactory.instance.arrayNode(((Collection<?>) input).size());
 
-                for (Object child : ((Collection<?>)input)) {
+                for (Object child : ((Collection<?>) input)) {
                     JsonNode childNode = parseFieldContents(Objects.requireNonNull(field.getCollectionElementType()), child);
                     ret.add(childNode);
                 }
@@ -259,9 +296,9 @@ public class PythonProxyTransformComponent extends TransformComponent implements
             } else {
                 switch (type.getTypeName()) {
                     case BYTE:
-                        return (byte)json.intValue();
+                        return (byte) json.intValue();
                     case INT16:
-                        return (short)json.intValue();
+                        return (short) json.intValue();
                     case INT32:
                         return json.intValue();
                     case INT64:
