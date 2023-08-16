@@ -125,9 +125,11 @@ public class PythonBridge<T> implements Serializable {
             }
             File envFile = new File(workDir, "environment.yml");
             if (envFile.exists()) {
-                cachedEnvChecksum = Files.readAllLines(envFile.toPath()).get(0);
+                byte[] data = Files.readAllBytes(Paths.get(new File(workDir, "environment.yml").getPath()));
+                byte[] hash = MessageDigest.getInstance("MD5").digest(data);
+                cachedEnvChecksum = new BigInteger(1, hash).toString(16);
             }
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException e) {
             env.completeExceptionally(e);
             return;
         }
