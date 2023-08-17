@@ -47,7 +47,8 @@ public class SchemaConfigUtils {
         ObjectNode ret = JsonNodeFactory.instance.objectNode();
         input.getFields().forEach(f -> {
             String key = f.getName();
-            fieldTypeToJSON(f.getType());
+            JsonNode child = fieldTypeToJSON(f.getType());
+            ret.set(key, child);
         });
         return ret;
     }

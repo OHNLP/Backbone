@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.schemas.Schema;
-import org.ohnlp.backbone.api.BackbonePipelineComponent;
-import org.ohnlp.backbone.api.Extract;
-import org.ohnlp.backbone.api.Load;
-import org.ohnlp.backbone.api.Transform;
+import org.ohnlp.backbone.api.*;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractComponent;
 import org.ohnlp.backbone.api.components.HasInputs;
@@ -15,11 +12,15 @@ import org.ohnlp.backbone.api.components.legacy.v2.UsesLegacyConfigInit;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedExtract;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedLoad;
 import org.ohnlp.backbone.api.components.legacy.v2.WrappedTransform;
+import org.ohnlp.backbone.api.components.xlang.python.PythonProxyTransformComponent;
+import org.ohnlp.backbone.api.config.xlang.JavaBackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.api.config.xlang.PythonBackbonePipelineComponentConfiguration;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.api.config.BackboneConfiguration;
 import org.ohnlp.backbone.api.config.BackbonePipelineComponentConfiguration;
 import org.ohnlp.backbone.api.util.SchemaConfigUtils;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -53,37 +54,47 @@ public class PipelineBuilder {
                 if (configs[i].getComponentID() == null) {
                     configs[i].setComponentID(i + "");
                 }
-                if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(configs[i].getClazz())) {
-                    LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
-                            "used with a Backbone v3.0+ installation. Input/Output associations between " +
-                            "different components are being inferred. Running the configuration update script " +
-                            "is strongly recommended for stability and to verify result correctness");
-                    BackbonePipelineComponentConfiguration.InputDefinition generatedDef
-                            = new BackbonePipelineComponentConfiguration.InputDefinition();
-                    generatedDef.setComponentID((i - 1) + "");
-                    generatedDef.setInputTag("*");
-                    configs[i].setInputs(Collections.singletonMap("*", generatedDef));
-                }
-                Class<? extends BackbonePipelineComponent> clazz = configs[i].getClazz();
-                Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
-                BackbonePipelineComponent instance = ctor.newInstance();
-                JsonNode configForInstance = configs[i].getConfig();
-                if (instance instanceof UsesLegacyConfigInit) {
-                    ((UsesLegacyConfigInit)instance).initFromConfig(configs[i].getConfig());
-                    if (instance instanceof Extract) {
-                        instance = new WrappedExtract((Extract) instance);
-                    } else if (instance instanceof Transform) {
-                        instance = new WrappedTransform((Transform) instance);
-                    } else {
-                        instance = new WrappedLoad((Load) instance);
+                if (configs[i] instanceof JavaBackbonePipelineComponentConfiguration) {
+                    // Handle Java Initialization
+                    if (((configs[i].getInputs() == null || configs[i].getInputs().isEmpty()) && i > 0) && HasInputs.class.isAssignableFrom(((JavaBackbonePipelineComponentConfiguration)configs[i]).getClazz())) {
+                        LOGGER.warning("A legacy (pre Backbone v3.0) pipeline configuration is being " +
+                                "used with a Backbone v3.0+ installation. Input/Output associations between " +
+                                "different components are being inferred. Running the configuration update script " +
+                                "is strongly recommended for stability and to verify result correctness");
+                        BackbonePipelineComponentConfiguration.InputDefinition generatedDef
+                                = new BackbonePipelineComponentConfiguration.InputDefinition();
+                        generatedDef.setComponentID((i - 1) + "");
+                        generatedDef.setInputTag("*");
+                        configs[i].setInputs(Collections.singletonMap("*", generatedDef));
                     }
-                } else {
-                    injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
+                    Class<? extends BackbonePipelineComponent> clazz = ((JavaBackbonePipelineComponentConfiguration)configs[i]).getClazz();
+                    Constructor<? extends BackbonePipelineComponent> ctor = clazz.getDeclaredConstructor();
+                    BackbonePipelineComponent instance = ctor.newInstance();
+                    JsonNode configForInstance = configs[i].getConfig();
+                    if (instance instanceof UsesLegacyConfigInit) {
+                        ((UsesLegacyConfigInit) instance).initFromConfig(configs[i].getConfig());
+                        if (instance instanceof Extract) {
+                            instance = new WrappedExtract((Extract) instance);
+                        } else if (instance instanceof Transform) {
+                            instance = new WrappedTransform((Transform) instance);
+                        } else {
+                            instance = new WrappedLoad((Load) instance);
+                        }
+                    } else {
+                        injectInstanceWithConfigurationProperties(clazz, instance, configForInstance);
+                        instance.init();
+                    }
+                    componentsByID.put(configs[i].getComponentID(), new InitializedPipelineComponent(configs[i].getComponentID(), configs[i].getInputs(), instance));
+                    if (instance instanceof ExtractComponent) {
+                        extracts.add(configs[i].getComponentID());
+                    }
+                } else if (configs[i] instanceof PythonBackbonePipelineComponentConfiguration) {
+                    PythonBackbonePipelineComponentConfiguration pythonconfig = (PythonBackbonePipelineComponentConfiguration) configs[i];
+                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(new File(System.getProperty("java.io.tmpdir")), pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
+                    JsonNode configForInstance = pythonconfig.getConfig();
+                    instance.injectConfig(configForInstance);
                     instance.init();
-                }
-                componentsByID.put(configs[i].getComponentID(), new InitializedPipelineComponent(configs[i].getComponentID(), configs[i].getInputs(), instance));
-                if (instance instanceof ExtractComponent) {
-                    extracts.add(configs[i].getComponentID());
+                    componentsByID.put(configs[i].getComponentID(), new InitializedPipelineComponent(configs[i].getComponentID(), configs[i].getInputs(), instance));
                 }
             } catch (Throwable t) {
                 throw new ComponentInitializationException(t);
@@ -105,7 +116,7 @@ public class PipelineBuilder {
     private static void injectInstanceWithConfigurationProperties(
             Class<? extends BackbonePipelineComponent> clazz,
             BackbonePipelineComponent instance,
-            JsonNode configForInstance) throws JsonProcessingException, IllegalAccessException {
+            JsonNode configForInstance) throws IllegalAccessException {
         ObjectMapper om = new ObjectMapper();
         for (Field f : clazz.getDeclaredFields()) {
             if (f.isAnnotationPresent(ConfigurationProperty.class)) {

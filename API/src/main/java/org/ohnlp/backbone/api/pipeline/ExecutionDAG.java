@@ -188,4 +188,8 @@ public class ExecutionDAG {
         // TODO check graph acyclic
         // TODO check input/output column names
     }
+
+    public void teardown() {
+        componentsByID.forEach((id, c) -> c.getComponent().teardown());
+    }
 }

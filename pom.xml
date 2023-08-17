@@ -6,11 +6,11 @@
 
     <groupId>org.ohnlp.backbone</groupId>
     <artifactId>backbone-parent</artifactId>
-    <version>3.0.7</version>
+    <version>3.0.8</version>
 
 
     <properties>
-        <beam.version>2.40.0</beam.version>
+        <beam.version>2.48.0</beam.version>
     </properties>
 
     <packaging>

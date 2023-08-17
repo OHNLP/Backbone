@@ -1,8 +1,11 @@
 package org.ohnlp.backbone.api.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ohnlp.backbone.api.BackbonePipelineComponent;
+import org.ohnlp.backbone.api.ComponentLang;
+import org.ohnlp.backbone.api.config.xlang.JavaBackbonePipelineComponentConfiguration;
+import org.ohnlp.backbone.api.config.xlang.PythonBackbonePipelineComponentConfiguration;
 
 import java.util.Map;
 import java.util.Objects;
@@ -11,7 +14,23 @@ import java.util.Objects;
  * Represents a declaration and associated configuration of a specific pipeline component.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "lang",
+        visible = true,
+        defaultImpl = JavaBackbonePipelineComponentConfiguration.class
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = JavaBackbonePipelineComponentConfiguration.class, name="JAVA"),
+        @JsonSubTypes.Type(value = PythonBackbonePipelineComponentConfiguration.class, name="PYTHON")
+})
 public class BackbonePipelineComponentConfiguration {
+
+    /**
+     * The component lang
+     */
+    private ComponentLang lang;
 
     /**
      * An ID for this step. Defaults to the numeric index of this step in the pipeline
@@ -21,16 +40,20 @@ public class BackbonePipelineComponentConfiguration {
     /**
      * Input mappings
      */
-    private  Map<String, InputDefinition>  inputs;
+    private Map<String, InputDefinition> inputs;
 
-    /**
-     * The class of the pipeline component, should extend {@link BackbonePipelineComponent}
-     */
-    private Class<? extends BackbonePipelineComponent> clazz;
     /**
      * The configuration associated with this specific component
      */
     private JsonNode config;
+
+    public ComponentLang getLang() {
+        return lang;
+    }
+
+    public void setLang(ComponentLang lang) {
+        this.lang = lang;
+    }
 
     public String getComponentID() {
         return componentID;
@@ -44,16 +67,8 @@ public class BackbonePipelineComponentConfiguration {
         return inputs;
     }
 
-    public void setInputs( Map<String, InputDefinition>  inputs) {
+    public void setInputs(Map<String, InputDefinition> inputs) {
         this.inputs = inputs;
-    }
-
-    public Class<? extends BackbonePipelineComponent> getClazz() {
-        return clazz;
-    }
-
-    public void setClazz(Class<? extends BackbonePipelineComponent> clazz) {
-        this.clazz = clazz;
     }
 
     public JsonNode getConfig() {

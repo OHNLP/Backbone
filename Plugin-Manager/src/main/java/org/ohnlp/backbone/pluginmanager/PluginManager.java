@@ -28,6 +28,8 @@ public class PluginManager {
         List<File> modules = Arrays.asList(Objects.requireNonNull(new File("modules").listFiles()));
         List<File> configs = Arrays.asList(Objects.requireNonNull(new File("configs").listFiles()));
         List<File> resources = Arrays.asList(Objects.requireNonNull(new File("resources").listFiles()));
+        List<File> pythonModules = new File("python_modules").exists() ? Arrays.asList(Objects.requireNonNull(new File("python_modules").listFiles())) : Collections.emptyList();
+        List<File> pythonResources = new File("python_resources").exists() ? Arrays.asList(Objects.requireNonNull(new File("python_resources").listFiles())) : Collections.emptyList();
         for (File f : new File("bin").listFiles()) {
             if (!f.isDirectory()) {
                 if (f.getName().startsWith("Backbone-Core") && !f.getName().endsWith("Packaged.jar")) {
@@ -52,7 +54,7 @@ public class PluginManager {
                             invalidateAllHashes = true;
                             updated = true;
                         }
-                        updated = install(invalidateAllHashes, target, typeHash, modules, configs, resources, touched) || updated;
+                        updated = install(invalidateAllHashes, target, typeHash, modules, configs, resources, touched, pythonModules, pythonResources) || updated;
                         if (!updated) {
                             System.out.println("No changed files found");
                         } else {
@@ -99,15 +101,22 @@ public class PluginManager {
      * @param resources           A set of resource directories to install
      * @param touched
      */
-    public static boolean install(boolean invalidateAllHashes, File target, ObjectNode hashRegistry, List<File> modules, List<File> configurations, List<File> resources, Set<String> touched) {
-        Set<String> existingPaths = new HashSet<>();
-        if (!invalidateAllHashes) {
-            hashRegistry.fieldNames().forEachRemaining(existingPaths::add);
-        }
+    public static boolean install(boolean invalidateAllHashes, File target, ObjectNode hashRegistry, List<File> modules, List<File> configurations, List<File> resources, Set<String> touched, List<File> pythonModules, List<File> pythonResources) {
         AtomicBoolean updated = new AtomicBoolean(false);
         Map<String, String> env = new HashMap<>();
         env.put("create", "false");
         try (FileSystem fs = FileSystems.newFileSystem(target.toPath(), PluginManager.class.getClassLoader())) {
+            // ==== JAVA INSTALL START =====
+            // Configs
+            Files.createDirectories(fs.getPath("/configs"));
+            for (File config : configurations) {
+                if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, config, touched)) {
+                    updated.set(true);
+                    System.out.println("- " + getRelativePath(config));
+                    Files.copy(config.toPath(), fs.getPath("/configs/" + config.getName()), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            // Modules
             for (File module : modules) {
                 if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, module, touched)) {
                     updated.set(true);
@@ -143,7 +152,7 @@ public class PluginManager {
             for (File resource : resources) {
                 String resourceDir = resource.getParentFile().toPath().toAbsolutePath().toString();
                 if (resource.isDirectory()) {
-                    // Recursively find all files in directory (up to arbitrary max depth of 999
+                    // Recursively find all files in directory (up to arbitrary max depth of 999)
                     Files.find(resource.toPath(), 999, (p, bfa) -> bfa.isRegularFile()).forEach(p -> {
                         try {
                             if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, p.toFile(), touched)) {
@@ -162,6 +171,43 @@ public class PluginManager {
                         System.out.println("+ " + getRelativePath(resource));
                         updated.set(true);
                         Files.copy(resource.toPath(), fs.getPath("/resources/" + resource.getName()), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+            }
+            // ==== PYTHON INSTALL START =====
+            // Modules
+            Files.createDirectories(fs.getPath("/python_modules"));
+            for (File module : pythonModules) {
+                if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, module, touched)) {
+                    updated.set(true);
+                    System.out.println("- " + getRelativePath(module));
+                    Files.copy(module.toPath(), fs.getPath("/python_modules/" + module.getName()), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            Files.createDirectories(fs.getPath("/python_resources"));
+            // Resources
+            for (File resource : pythonResources) {
+                String resourceDir = resource.getParentFile().toPath().toAbsolutePath().toString();
+                if (resource.isDirectory()) {
+                    // Recursively find all files in directory (up to arbitrary max depth of 999)
+                    Files.find(resource.toPath(), 999, (p, bfa) -> bfa.isRegularFile()).forEach(p -> {
+                        try {
+                            if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, p.toFile(), touched)) {
+                                System.out.println("- " + getRelativePath(p.toFile()));
+                                updated.set(true);
+                                Path filePath = fs.getPath(p.toAbsolutePath().toString().replace(resourceDir, "/python_resources"));
+                                Files.createDirectories(filePath.getParent());
+                                Files.copy(p, filePath, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (IOException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    });
+                } else {
+                    if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, resource, touched)) {
+                        System.out.println("- " + getRelativePath(resource));
+                        updated.set(true);
+                        Files.copy(resource.toPath(), fs.getPath("/python_resources/" + resource.getName()), StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
             }
