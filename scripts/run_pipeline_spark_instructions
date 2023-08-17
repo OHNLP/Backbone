@@ -11,7 +11,7 @@ To run the pipeline on a spark cluster, do the following:
 
 
 Important Notes:
-- Backbone currently only supports Spark v2.x
+- Backbone currently only supports Spark v3.x
 - If running in local mode (--master=local[#]), you will need to have to have spark binaries in the final shaded
   package. Two spark variants are provided, if running in local mode, simply replace all instances of
   Backbone-Core-Spark-Packaged.jar with Backbone-Core-Spark-Standalone-Packaged.jar in the above instructions. Note that
