@@ -76,7 +76,7 @@ public class JDBCExtract extends ExtractToOne {
 
     private JdbcIO.DataSourceConfiguration datasourceConfig;
     private long numBatches;
-    private ComboPooledDataSource ds;
+    private ComboPooledDataSource initializationDS;
     private String[] orderByCols;
     private String viewName;
     private String orderedQuery;
@@ -107,7 +107,14 @@ public class JDBCExtract extends ExtractToOne {
      */
     public void init() throws ComponentInitializationException {
         try {
-            this.ds = new ComboPooledDataSource();
+            this.initializationDS = new ComboPooledDataSource();
+            initializationDS.setAcquireRetryAttempts(1);
+            initializationDS.setDriverClass(driver);
+            initializationDS.setJdbcUrl(url);
+            initializationDS.setUser(user);
+            initializationDS.setPassword(password);
+            initializationDS.setMaxIdleTime(this.idleTimeout);
+            ComboPooledDataSource ds = new ComboPooledDataSource();
             ds.setDriverClass(driver);
             ds.setJdbcUrl(url);
             ds.setUser(user);
@@ -124,7 +131,7 @@ public class JDBCExtract extends ExtractToOne {
             // Find appropriate columns to order by so that pagination results are consistent
             this.orderByCols = findPaginationOrderingColumns(this.query);
             // Get record count so that we know how many batches are going to be needed
-            try (Connection conn = ds.getConnection()) {
+            try (Connection conn = initializationDS.getConnection()) {
                 ResultSet rs = conn.createStatement().executeQuery(countQuery);
                 rs.next();
                 int resultCount = rs.getInt(1);
@@ -165,7 +172,7 @@ public class JDBCExtract extends ExtractToOne {
     @Override
     public Schema calculateOutputSchema() {
         Schema schema;
-        try (Connection conn = ds.getConnection();
+        try (Connection conn = initializationDS.getConnection();
              PreparedStatement ps = conn.prepareStatement(this.query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
             schema = SchemaUtilProxy.toBeamSchema(driver, ps.getMetaData());
         } catch (SQLException throwables) {
@@ -198,7 +205,7 @@ public class JDBCExtract extends ExtractToOne {
     }
 
     private String[] findPaginationOrderingColumns(String query) throws ComponentInitializationException {
-        try (Connection conn = this.ds.getConnection()) {
+        try (Connection conn = this.initializationDS.getConnection()) {
             ResultSetMetaData queryMeta = conn.prepareStatement(query).getMetaData();
             Map<String, Integer> colNameToIndex = new HashMap<>();
             for (int i = 0; i < queryMeta.getColumnCount(); i++) {
