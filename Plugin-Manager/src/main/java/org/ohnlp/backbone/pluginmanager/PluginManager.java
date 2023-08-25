@@ -1,10 +1,12 @@
 package org.ohnlp.backbone.pluginmanager;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.*;
@@ -14,6 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 public class PluginManager {
 
@@ -30,6 +35,7 @@ public class PluginManager {
         List<File> resources = Arrays.asList(Objects.requireNonNull(new File("resources").listFiles()));
         List<File> pythonModules = new File("python_modules").exists() ? Arrays.asList(Objects.requireNonNull(new File("python_modules").listFiles())) : Collections.emptyList();
         List<File> pythonResources = new File("python_resources").exists() ? Arrays.asList(Objects.requireNonNull(new File("python_resources").listFiles())) : Collections.emptyList();
+        List<File> pythonEnvs = new File("python_envs").exists() ? Arrays.asList(Objects.requireNonNull(new File("python_envs").listFiles())) : Collections.emptyList();
         for (File f : new File("bin").listFiles()) {
             if (!f.isDirectory()) {
                 if (f.getName().startsWith("Backbone-Core") && !f.getName().endsWith("Packaged.jar")) {
@@ -49,12 +55,12 @@ public class PluginManager {
                         boolean updated = false;
                         Set<String> touched = new HashSet<>();
                         if (!checkAndUpdateMD5ChecksumRegistry(false, typeHash, f, touched)) {
-                            System.out.println("+ " + getRelativePath(f));
+                            System.out.println("- " + getRelativePath(f));
                             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
                             invalidateAllHashes = true;
                             updated = true;
                         }
-                        updated = install(invalidateAllHashes, target, typeHash, modules, configs, resources, touched, pythonModules, pythonResources) || updated;
+                        updated = install(invalidateAllHashes, target, typeHash, modules, configs, resources, touched, pythonModules, pythonResources, pythonEnvs) || updated;
                         if (!updated) {
                             System.out.println("No changed files found");
                         } else {
@@ -101,7 +107,7 @@ public class PluginManager {
      * @param resources           A set of resource directories to install
      * @param touched
      */
-    public static boolean install(boolean invalidateAllHashes, File target, ObjectNode hashRegistry, List<File> modules, List<File> configurations, List<File> resources, Set<String> touched, List<File> pythonModules, List<File> pythonResources) {
+    public static boolean install(boolean invalidateAllHashes, File target, ObjectNode hashRegistry, List<File> modules, List<File> configurations, List<File> resources, Set<String> touched, List<File> pythonModules, List<File> pythonResources, List<File> pythonEnvs) {
         AtomicBoolean updated = new AtomicBoolean(false);
         Map<String, String> env = new HashMap<>();
         env.put("create", "false");
@@ -120,7 +126,7 @@ public class PluginManager {
             for (File module : modules) {
                 if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, module, touched)) {
                     updated.set(true);
-                    System.out.println("+ " + getRelativePath(module));
+                    System.out.println("- " + getRelativePath(module));
                     try (FileSystem srcFs = FileSystems.newFileSystem(module.toPath(), PluginManager.class.getClassLoader())) {
                         Path srcRoot = srcFs.getPath("/");
                         Files.walkFileTree(srcRoot, new SimpleFileVisitor<Path>() {
@@ -143,7 +149,7 @@ public class PluginManager {
             for (File config : configurations) {
                 if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, config, touched)) {
                     updated.set(true);
-                    System.out.println("+ " + getRelativePath(config));
+                    System.out.println("- " + getRelativePath(config));
                     Files.copy(config.toPath(), fs.getPath("/configs/" + config.getName()), StandardCopyOption.REPLACE_EXISTING);
                 }
             }
@@ -156,7 +162,7 @@ public class PluginManager {
                     Files.find(resource.toPath(), 999, (p, bfa) -> bfa.isRegularFile()).forEach(p -> {
                         try {
                             if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, p.toFile(), touched)) {
-                                System.out.println("+ " + getRelativePath(p.toFile()));
+                                System.out.println("- " + getRelativePath(p.toFile()));
                                 updated.set(true);
                                 Path filePath = fs.getPath(p.toAbsolutePath().toString().replace(resourceDir, "/resources"));
                                 Files.createDirectories(filePath.getParent());
@@ -168,7 +174,7 @@ public class PluginManager {
                     });
                 } else {
                     if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, resource, touched)) {
-                        System.out.println("+ " + getRelativePath(resource));
+                        System.out.println("- " + getRelativePath(resource));
                         updated.set(true);
                         Files.copy(resource.toPath(), fs.getPath("/resources/" + resource.getName()), StandardCopyOption.REPLACE_EXISTING);
                     }
@@ -177,12 +183,26 @@ public class PluginManager {
             // ==== PYTHON INSTALL START =====
             // Modules
             Files.createDirectories(fs.getPath("/python_modules"));
+            Map<String, String> registeredModules = new HashMap<>();
             for (File module : pythonModules) {
                 if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, module, touched)) {
                     updated.set(true);
                     System.out.println("- " + getRelativePath(module));
                     Files.copy(module.toPath(), fs.getPath("/python_modules/" + module.getName()), StandardCopyOption.REPLACE_EXISTING);
                 }
+                try (ZipFile zf = new ZipFile(module)) {
+                    ZipEntry e = zf.getEntry("backbone_module.json");
+                    if (e != null) {
+                        JsonNode def = new ObjectMapper().readTree(zf.getInputStream(e));
+                        registeredModules.put(def.get("module_identifier").asText(), module.getName());
+                    }
+                }
+            }
+            if (updated.get()) {
+                File moduleRegistrationFile = new File("registered_modules.json");
+                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(moduleRegistrationFile, registeredModules);
+                Files.copy(moduleRegistrationFile.toPath(), fs.getPath("/registered_modules.json"), StandardCopyOption.REPLACE_EXISTING);
+                moduleRegistrationFile.delete();
             }
             Files.createDirectories(fs.getPath("/python_resources"));
             // Resources
@@ -209,6 +229,33 @@ public class PluginManager {
                         updated.set(true);
                         Files.copy(resource.toPath(), fs.getPath("/python_resources/" + resource.getName()), StandardCopyOption.REPLACE_EXISTING);
                     }
+                }
+            }
+            // Envs
+            for (File envFile : pythonEnvs) {
+                String envDir = envFile.getParentFile().toPath().toAbsolutePath().toString();
+                if (envFile.isDirectory()) {
+                    // Recursively find all files in directory (up to arbitrary max depth of 999)
+                    Files.find(envFile.toPath(), 999, (p, bfa) -> bfa.isRegularFile()).forEach(p -> {
+                        try {
+                            if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, p.toFile(), touched)) {
+                                System.out.println("- " + getRelativePath(p.toFile()));
+                                updated.set(true);
+                                Path filePath = fs.getPath(p.toAbsolutePath().toString().replace(envDir, "/python_envs"));
+                                Files.createDirectories(filePath.getParent());
+                                Files.copy(p, filePath, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (IOException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    });
+                } else {
+                    if (!checkAndUpdateMD5ChecksumRegistry(invalidateAllHashes, hashRegistry, envFile, touched)) {
+                        System.out.println("- " + getRelativePath(envFile));
+                        updated.set(true);
+                        Files.copy(envFile.toPath(), fs.getPath("/python_resources/" + envFile.getName()), StandardCopyOption.REPLACE_EXISTING);
+                    }
+
                 }
             }
             // Now delete removed files
