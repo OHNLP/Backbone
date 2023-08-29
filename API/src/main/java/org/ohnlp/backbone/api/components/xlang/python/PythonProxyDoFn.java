@@ -69,15 +69,12 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     public void process(ProcessContext pc) {
         // String => String since the requisite PTransform would have already handled conversion to/from JSON
         String input = pc.element();
-        System.out.println("ProxyParDo: Processing " + input);
         PythonRow inputRow = this.proxiedDoFn.python_row_from_json_string(input);
-        System.out.println("Sending converted row to apply: " + inputRow.toString());
         if (this.proxiedDoFn instanceof PythonOneToOneTransformDoFn) {
             ((PythonOneToOneTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r ->
                     pc.output(this.proxiedDoFn.json_string_from_python_row(r)));
         } else if (this.proxiedDoFn instanceof PythonOneToManyTransformDoFn) {
             ((PythonOneToManyTransformDoFn)this.proxiedDoFn).proxied_apply(inputRow).forEach(r -> {
-                System.out.println("Received from apply: " + r.get_row());
                 pc.output(new TupleTag<>(r.get_tag()), this.proxiedDoFn.json_string_from_python_row(r.get_row()));
             });
         } else {
