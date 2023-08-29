@@ -34,7 +34,7 @@ public class PythonBridge<T> implements Serializable {
             = new ConcurrentHashMap<>();
     private static final ConcurrentLinkedQueue<DefaultExecutor> JVM_SUBPROCESS_REFERENCES = new ConcurrentLinkedQueue<>();
     public static boolean CLEANUP_ENVS_ON_SHUTDOWN = true;
-    private final long pythonInitTimeout = 30000; // TODO make this configurable
+    private final long pythonInitTimeout = 300000; // TODO make this configurable
     private final String bundleIdentifier;
     private final String entryPoint;
     private final String entryClass;
