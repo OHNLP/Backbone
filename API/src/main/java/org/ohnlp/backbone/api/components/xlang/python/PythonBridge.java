@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -33,6 +34,8 @@ public class PythonBridge<T> implements Serializable {
     private static final ConcurrentHashMap<String, CompletableFuture<PythonEnvironment>> JVM_ENVIRONMENTS_BY_BUNDLE_ID
             = new ConcurrentHashMap<>();
     private static final ConcurrentLinkedQueue<DefaultExecutor> JVM_SUBPROCESS_REFERENCES = new ConcurrentLinkedQueue<>();
+
+    public static AtomicBoolean IS_SHUTTING_DOWN = new AtomicBoolean(false);
     public static boolean CLEANUP_ENVS_ON_SHUTDOWN = true;
     private final long pythonInitTimeout = 30000; // TODO make this configurable
     private final String bundleIdentifier;
@@ -377,7 +380,7 @@ public class PythonBridge<T> implements Serializable {
         this.executor = new DefaultExecutor();
         this.executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         this.executor.setWorkingDirectory(env.workDir);
-        this.executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
+        this.executor.setProcessDestroyer(new FlagSettingShutdownHookProcessDestroyer());
         JVM_SUBPROCESS_REFERENCES.add(this.executor);
         try {
             this.executor.execute(cmdLine, new ExecuteResultHandler() {
@@ -388,11 +391,13 @@ public class PythonBridge<T> implements Serializable {
 
                 @Override
                 public void onProcessFailed(ExecuteException e) {
-                    try {
-                        shutdownBridge();
-                    } catch (Throwable ignored) {
+                    if (!IS_SHUTTING_DOWN.get()) {
+                        try {
+                            shutdownBridge();
+                        } catch (Throwable ignored) {
+                        }
+                        throw new RuntimeException("Broken Python Bridge", e);
                     }
-                    throw new RuntimeException("Broken Python Bridge", e);
                 }
             });
         } catch (IOException e) {
@@ -485,6 +490,7 @@ public class PythonBridge<T> implements Serializable {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            IS_SHUTTING_DOWN.set(true);
             // Cleanup Threads
             for (DefaultExecutor executor : JVM_SUBPROCESS_REFERENCES) {
                 try {
@@ -502,5 +508,13 @@ public class PythonBridge<T> implements Serializable {
                 }
             }
         }));
+    }
+
+    public class FlagSettingShutdownHookProcessDestroyer extends ShutdownHookProcessDestroyer {
+        @Override
+        public void run() {
+            IS_SHUTTING_DOWN.set(true);
+            super.run();
+        }
     }
 }
