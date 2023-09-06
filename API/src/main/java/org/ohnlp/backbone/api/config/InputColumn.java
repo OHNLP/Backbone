@@ -3,8 +3,10 @@ package org.ohnlp.backbone.api.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.ohnlp.backbone.api.config.serialization.InputColumnDeserializer;
 
+import java.io.Serializable;
+
 @JsonDeserialize(using = InputColumnDeserializer.class)
-public class InputColumn {
+public class InputColumn implements Serializable {
     private String sourceTag;
     private String sourceColumnName;
 
