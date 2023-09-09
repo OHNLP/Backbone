@@ -216,7 +216,11 @@ public class JDBCExtract extends ExtractToOne {
             }
             if (this.identifierCol != null) {
                 // User-supplied identifier column exists, make sure it actually exists in query results
-                if (!colNameToIndex.containsKey(this.identifierCol)) {
+                String toCheck = this.identifierCol;
+                if (this.identifierCol.startsWith("\"") && this.identifierCol.endsWith("\"")) {
+                    toCheck = toCheck.substring(1, toCheck.length() - 1);
+                }
+                if (!colNameToIndex.containsKey(toCheck)) {
                     throw new ComponentInitializationException(
                             new IllegalArgumentException("The supplied identifier_col " + this.identifierCol + " " +
                                     "does not exist in the returned query results. Available columns: " +
