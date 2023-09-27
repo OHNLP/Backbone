@@ -82,11 +82,8 @@ public class JDBCExtract extends ExtractToOne {
     private int idleTimeout = 0;
 
     private JdbcIO.DataSourceConfiguration datasourceConfig;
-    private long numBatches;
     private ComboPooledDataSource initializationDS;
-    private String[] orderByCols;
     private String viewName;
-    private String orderedQuery;
     private Schema schema;
     private String keyValueQuery;
     private Schema keyValueSchema;
@@ -135,43 +132,7 @@ public class JDBCExtract extends ExtractToOne {
             // of batches
             String runId = UUID.randomUUID().toString().replaceAll("-", "_");
             this.viewName = "backbone_jdbcextract_" + runId;
-            if (this.identifierCol == null) {
-                // No identifier column provided so we can only do a full-form sort.
-                // TODO find a better solution for this
-                //noinspection SqlResolve
-                String countQuery = "SELECT COUNT(*) FROM (" + query + ") bckbone_preflight_query_" + runId;
-                // Find appropriate columns to order by so that pagination results are consistent
-                this.orderByCols = findPaginationOrderingColumns(this.query);
-                // Get record count so that we know how many batches are going to be needed
-                try (Connection conn = initializationDS.getConnection()) {
-                    ResultSet rs = conn.createStatement().executeQuery(countQuery);
-                    rs.next();
-                    int resultCount = rs.getInt(1);
-                    this.numBatches = Math.round(Math.ceil((double) resultCount / this.batchSize));
-                }
-                // Normally I would say use Strings.join for the below, but this was causing cross-jvm issues
-                // so we use the more portable stringbuilder instead...
-                StringBuilder sB = new StringBuilder();
-                boolean flag = false;
-                for (String s : this.orderByCols) {
-                    if (flag) {
-                        sB.append(", ");
-                    }
-                    sB.append(s);
-                    flag = true;
-                }
-                this.orderedQuery = "SELECT * FROM (" + this.query + ") " + this.viewName
-                        + " ORDER BY " + sB.toString() + " ";
-                // Now we have to add the offset/fetch in the dialect local format..
-                // Specifically, postgres and MySQL are special in that they do not conform to the
-                // SQL:2011 standard syntax
-                if (driver.equals("org.postgresql.Driver") || driver.equals("com.mysql.jdbc.Driver")
-                        || driver.equals("com.mysql.cj.jdbc.Driver") || driver.equals("org.sqlite.JDBC")) {
-                    this.orderedQuery += "LIMIT " + batchSize + " OFFSET ?";
-                } else { // This is the SQL:2011 standard definition of an offset...fetch syntax
-                    this.orderedQuery += "OFFSET ? ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
-                }
-            } else {
+            if (this.identifierCol != null) {
                 this.keyValueQuery = "SELECT DISTINCT " + identifierCol + " FROM (" + query + ") " + viewName;
                 this.keyValueSchema = getIdentifierColumnsSchema();
             }
@@ -201,10 +162,6 @@ public class JDBCExtract extends ExtractToOne {
     @Override
     public PCollection<Row> begin(PBegin input) {
         if (this.identifierCol == null) {
-            List<Integer> offsets = new ArrayList<>();
-            for (int i = 0; i < numBatches; i++) {
-                offsets.add(i * batchSize); // Create a sequence of batches at the appropriate offset
-            }
             return input.apply(
                     "Read from JDBC",
                     JdbcIO.<Row>read()
