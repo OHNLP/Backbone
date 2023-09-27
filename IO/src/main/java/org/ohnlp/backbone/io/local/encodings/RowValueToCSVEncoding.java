@@ -16,6 +16,7 @@ public class RowValueToCSVEncoding extends RowToTextEncoding {
 
     @Override
     public String toTextAllFields(Row input) {
-        return input.getValues().stream().map(o -> StringEscapeUtils.escapeCsv(o.toString())).collect(Collectors.joining(","));
+        return input.getValues().stream().map(o -> o == null ? "" : StringEscapeUtils.escapeCsv(o.toString())).collect(Collectors.joining(","));
+
     }
 }
