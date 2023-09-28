@@ -236,7 +236,8 @@ public class JDBCExtract extends ExtractToOne {
 
     private Schema getIdentifierColumnsSchema() throws ComponentInitializationException {
         try (Connection conn = this.initializationDS.getConnection()) {
-            ResultSetMetaData queryMeta = conn.prepareStatement("SELECT " + this.initializationDS + " FROM (" + this.query + ") " + this.viewName).getMetaData();
+            String metaQuery = "SELECT " + this.identifierCol + " FROM (" + this.query + ") " + this.viewName;
+            ResultSetMetaData queryMeta = conn.prepareStatement(metaQuery).getMetaData();
             return SchemaUtilProxy.toBeamSchema(this.driver, queryMeta);
         } catch (SQLException e) {
             throw new ComponentInitializationException(e);
