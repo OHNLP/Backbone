@@ -226,7 +226,11 @@ public class JDBCExtract extends ExtractToOne {
                                     new SchemaUtilProxy.BeamRowMapperProxy(schema))
                             .withParameterSetter((JdbcIO.PreparedStatementSetter<Row>) (element, preparedStatement) -> {
                                 for (int i = 0; i < cols.length; i++) {
-                                    preparedStatement.setObject(i + 1, element.getValue(cols[i]));
+                                    String col = cols[i];
+                                    if (col.startsWith("\"")) {
+                                        col = col.substring(1, col.length() - 1);
+                                    }
+                                    preparedStatement.setObject(i + 1, element.getValue(col));
                                 }
                             })
                             .withCoder(RowCoder.of(schema))
