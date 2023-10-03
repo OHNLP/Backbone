@@ -10,6 +10,7 @@ import org.ohnlp.backbone.api.components.LoadFromOne;
 import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.local.encodings.RowHeaderToCSVEncoding;
+import org.ohnlp.backbone.io.local.encodings.RowHeaderToPipeDelimitedEncoding;
 import org.ohnlp.backbone.io.local.encodings.RowValueToCSVEncoding;
 import org.ohnlp.backbone.io.local.encodings.RowValueToPipeDelimitedEncoding;
 import org.ohnlp.backbone.io.local.functions.FileSystemLoadTransform;
@@ -69,7 +70,7 @@ public class PipeDelimitedLoad extends LoadFromOne {
         return new FileSystemLoadTransform(
                 workingDir,
                 ".csv",
-                this.writeHeader ? new RowHeaderToCSVEncoding() : null,
+                this.writeHeader ? new RowHeaderToPipeDelimitedEncoding() : null,
                 new RowValueToPipeDelimitedEncoding(),
                 fields.stream().map(InputColumn::getSourceColumnName).collect(Collectors.toList())
         ).expand(input);
