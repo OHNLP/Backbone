@@ -17,6 +17,7 @@ import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
+import org.ohnlp.backbone.io.Repartition;
 
 import java.beans.PropertyVetoException;
 import java.sql.*;
@@ -286,33 +287,5 @@ public class JDBCExtract extends ExtractToOne {
             throw new ComponentInitializationException(t);
         }
 
-    }
-
-    private static class Repartition<T> extends PTransform<PCollection<T>, PCollection<T>> {
-
-        private Repartition() {}
-
-        public static <T> Repartition<T> of() {
-            return new Repartition<>();
-        }
-
-        @Override
-        public PCollection<T> expand(PCollection<T> input) {
-            return input
-                    .apply(ParDo.of(new DoFn<T, KV<Integer, T>>() {
-                        @ProcessElement
-                        public void process(ProcessContext pc) {
-                            pc.output(KV.of(ThreadLocalRandom.current().nextInt(), pc.element()));
-                        }
-                    }))
-                    .apply(GroupByKey.<Integer, T>create())
-                    .apply(ParDo.of(new DoFn<KV<Integer, Iterable<T>>, T>() {
-                        @ProcessElement
-                        public void process(ProcessContext pc) {
-                            for (T element : pc.element().getValue()) {
-                                pc.output(element);
-                            }                        }
-                    }));
-        }
     }
 }
