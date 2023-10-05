@@ -46,22 +46,34 @@ public class FileSystemLoadTransform extends PTransform<PCollection<Row>, PDone>
     public PDone expand(PCollection<Row> input) {
         input.apply("File System Load", ParDo.of(new DoFn<Row, Void>() {
             private transient Writer writer;
+            private long writtenSize;
 
-            @Setup
-            public void init() throws IOException {
+            private void reinitWriter() throws IOException {
                 ResourceId outputResource = FileSystems.matchNewResource(outputDir, true);
                 ResourceId outputFileResource = outputResource.resolve("part-" + UUID.randomUUID() + ext, ResolveOptions.StandardResolveOptions.RESOLVE_FILE);
                 this.writer = Channels.newWriter(FileSystems.create(outputFileResource, "application/octet-stream"), "UTF-8");
+                this.writtenSize = 0;
                 wroteHeader = false;
             }
 
+            @Setup
+            public void init() throws IOException {
+                reinitWriter();
+            }
+
             @ProcessElement
-            public void processElement(@Element Row input, OutputReceiver<Void> output) {
+            public void processElement(@Element Row input, OutputReceiver<Void> output) throws IOException {
                 if (!wroteHeader && headerEncoding != null) {
                     writeRecord(headerEncoding.toText(input, fields));
                     wroteHeader = true;
                 }
-                writeRecord(contentEncoding.toText(input, fields));
+                String toWrite = contentEncoding.toText(input, fields);
+                writeRecord(toWrite);
+                writtenSize += toWrite.getBytes(StandardCharsets.UTF_8).length;
+                if (writtenSize >= 256_000_000) { // 256 mb max size
+                    teardown();
+                    reinitWriter();
+                }
             }
 
             private void writeRecord(String text) {
