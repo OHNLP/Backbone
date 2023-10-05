@@ -97,7 +97,7 @@ public class CSVExtract extends ExtractToMany {
             public void processFile(ProcessContext pc) {
                 URI fileURI = URI.create(pc.element());
                 try (Reader reader = new FileReader(new File(fileURI))) {
-                    CSVFormat format = CSVFormat.EXCEL.withHeader(this.header).withSkipHeaderRecord(skipFirstRow);
+                    CSVFormat format = CSVFormat.EXCEL.withHeader(this.header).withSkipHeaderRecord(skipFirstRow).withNullString("");
                     CSVParser parser = format.parse(reader);
                     parser.iterator().forEachRemaining(r -> {
                         try {
@@ -116,7 +116,7 @@ public class CSVExtract extends ExtractToMany {
                             }
                             pc.output(new TupleTag<>("CSV Records"), rowBuilder.build());
                         } catch (Throwable t) {
-                            pc.output(new TupleTag<>("Errored Records"), Row.withSchema(errorSchema).addValue(r.toString()).addValue(t.getMessage()));
+                            pc.output(new TupleTag<>("Errored Records"), Row.withSchema(errorSchema).addValue(r.toString()).addValue(ExceptionUtils.getStackTrace(t)).build());
                         }
                     });
                 } catch (IOException e) {
