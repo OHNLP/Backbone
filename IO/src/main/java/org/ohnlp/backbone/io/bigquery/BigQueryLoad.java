@@ -34,6 +34,7 @@ public class BigQueryLoad extends LoadFromOne {
 
     @Override
     public POutput expand(PCollection<Row> input) {
+        this.writeSchema = input.getSchema();
         return input.apply(
                 "Transform output rows to BigQuery TableRow format", ParDo.of(
                         new DoFn<Row, TableRow>() {

@@ -53,6 +53,13 @@ public class CSVExtract extends ExtractToMany {
     private boolean skipFirstRow;
 
     @ConfigurationProperty(
+            path = "fanout",
+            desc = "Whether to reshuffle records after read. Defaults to false. Set to true if fanout is needed (i.e., if your individual CSV files are very large)",
+            required = false
+    )
+    private boolean fanout = false;
+
+    @ConfigurationProperty(
             path = "schema",
             desc = "CSV File Schema"
     )
@@ -65,11 +72,11 @@ public class CSVExtract extends ExtractToMany {
 
     @Override
     public void init() throws ComponentInitializationException {
-
     }
 
     @Override
     public PCollectionRowTuple expand(PBegin input) {
+
         PCollection<String> fileURIs = input.apply("Scan Input Directory for Partitioned Files", Create.of(Arrays.stream(Objects.requireNonNull(new File(dir).listFiles())).map(f -> f.toURI().toString()).collect(Collectors.toList()))).setCoder(StringUtf8Coder.of());
         PCollectionTuple readColls = fileURIs.apply("Read CSV Records and Map to Rows", ParDo.of(new DoFn<String, Row>() {
             private String[] header;
@@ -127,7 +134,10 @@ public class CSVExtract extends ExtractToMany {
         }).withOutputTags(new TupleTag<>("CSV Records"), TupleTagList.of(new TupleTag<>("Errored Records"))));
         PCollection<Row> read = readColls.get("CSV Records");
         read.setRowSchema(this.schema);
-        PCollectionRowTuple ret = PCollectionRowTuple.of("CSV Records", read.apply("Break Fusion", Repartition.of())).and("Errored Records", readColls.get("Errored Records"));
+        if (this.fanout) {
+            read = read.apply("Break Fusion", Repartition.of());
+        }
+        PCollectionRowTuple ret = PCollectionRowTuple.of("CSV Records", read).and("Errored Records", readColls.get("Errored Records"));
         // Set Coders
         ret.get("CSV Records").setRowSchema(this.schema);
         ret.get("Errored Records").setRowSchema(this.errorSchema);
