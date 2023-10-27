@@ -6,6 +6,10 @@ import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
+import org.checkerframework.checker.initialization.qual.Initialized;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.nullness.qual.UnknownKeyFor;
+import org.joda.time.ReadableDateTime;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.annotations.InputColumnProperty;
@@ -14,9 +18,11 @@ import org.ohnlp.backbone.api.config.InputColumn;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -143,57 +149,112 @@ public class JDBCLoad extends LoadFromOne {
                 switch (type) {
                     case BYTE:
                         this.execute = (data, statement) -> {
-                            statement.setByte(this.idx, data.getByte(this.fieldName));
+                            @Nullable @UnknownKeyFor @Initialized Byte val = data.getByte(this.fieldName);
+                            if (val != null) {
+                                statement.setByte(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.TINYINT);
+                            }
                         };
                         break;
                     case INT16:
                         this.execute = (data, statement) -> {
-                            statement.setShort(this.idx, data.getInt16(this.fieldName));
+                            Short val = data.getInt16(this.fieldName);
+                            if (val != null) {
+                                statement.setShort(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.SMALLINT);
+                            }
                         };
                         break;
                     case INT32:
                         this.execute = (data, statement) -> {
-                            statement.setInt(this.idx, data.getInt32(this.fieldName));
+                            Integer val = data.getInt32(this.fieldName);
+                            if (val != null) {
+                                statement.setInt(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.INTEGER);
+                            }
                         };
                         break;
                     case INT64:
                         this.execute = (data, statement) -> {
-                            statement.setLong(this.idx, data.getInt64(this.fieldName));
+                            Long val = data.getInt64(this.fieldName);
+                            if (val != null) {
+                                statement.setLong(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.BIGINT);
+                            }
                         };
                         break;
                     case DECIMAL:
                         this.execute = (data, statement) -> {
-                            statement.setBigDecimal(this.idx, data.getDecimal(this.fieldName));
+                            BigDecimal val = data.getDecimal(this.fieldName);
+                            if (val != null) {
+                                statement.setBigDecimal(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.DECIMAL);
+                            }
                         };
                         break;
                     case FLOAT:
                         this.execute = (data, statement) -> {
-                            statement.setFloat(this.idx, data.getFloat(this.fieldName));
+                            Float val = data.getFloat(this.fieldName);
+                            if (val != null) {
+                                statement.setFloat(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.FLOAT);
+                            }
                         };
                         break;
                     case DOUBLE:
                         this.execute = (data, statement) -> {
-                            statement.setDouble(this.idx, data.getDouble(this.fieldName));
+                            Double val = data.getDouble(this.fieldName);
+                            if (val != null) {
+                                statement.setDouble(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.DOUBLE);
+                            }
                         };
                         break;
                     case STRING:
                         this.execute = (data, statement) -> {
-                            statement.setString(this.idx, data.getString(this.fieldName));
+                            String val = data.getString(this.fieldName);
+                            if (val != null) {
+                                statement.setString(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.VARCHAR);
+                            }
                         };
                         break;
                     case DATETIME:
                         this.execute = (data, statement) -> {
-                            statement.setTimestamp(this.idx, new Timestamp(data.getDateTime(this.fieldName).getMillis()));
+                            ReadableDateTime val = data.getDateTime(this.fieldName);
+                            if (val != null) {
+                                statement.setTimestamp(this.idx, new Timestamp(val.getMillis()));
+                            } else {
+                                statement.setNull(this.idx, Types.TIMESTAMP);
+                            }
                         };
                         break;
                     case BOOLEAN:
                         this.execute = (data, statement) -> {
-                            statement.setBoolean(this.idx, data.getBoolean(this.fieldName));
+                            Boolean val = data.getBoolean(this.fieldName);
+                            if (val != null) {
+                                statement.setBoolean(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.BOOLEAN);
+                            }
                         };
                         break;
                     case BYTES:
                         this.execute = (data, statement) -> {
-                            statement.setBytes(this.idx, data.getBytes(this.fieldName));
+                            byte[] val = data.getBytes(this.fieldName);
+                            if (val != null) {
+                                statement.setBytes(this.idx, val);
+                            } else {
+                                statement.setNull(this.idx, Types.VARBINARY);
+                            }
                         };
                         break;
                     default:

@@ -14,7 +14,7 @@ public class BackboneRunner {
     public static void main(String... args) throws IOException, ComponentInitializationException {
         PipelineOptionsFactory.register(BackbonePipelineOptions.class);
         BackbonePipelineOptions options =
-                PipelineOptionsFactory.fromArgs(args).create().as(BackbonePipelineOptions.class);
+                PipelineOptionsFactory.fromArgs(args).as(BackbonePipelineOptions.class);
         Pipeline p = Pipeline.create(options);
         // First read in the config and create an execution plan
         BackboneConfiguration config = new ObjectMapper().readValue(BackboneRunner.class.getResourceAsStream("/configs/" + options.getConfig()), BackboneConfiguration.class);

@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.ohnlp.backbone</groupId>
         <artifactId>backbone-parent</artifactId>
-        <version>3.0.22</version>
+        <version>3.0.23</version>
     </parent>
 
     <artifactId>core</artifactId>
@@ -198,7 +198,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.beam</groupId>
-                    <artifactId>beam-runners-flink-1.13</artifactId>
+                    <artifactId>beam-runners-flink-1.16</artifactId>
                     <version>${beam.version}</version>
                 </dependency>
                 <!-- Note: this dependency is needed for every non-spark compile (where it is provided in runtime env)
