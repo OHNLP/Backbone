@@ -137,6 +137,10 @@ public class PluginManager {
                                     return FileVisitResult.CONTINUE;
                                 }
                                 Path tgtPath = fs.getPath(path.toString());
+                                if (tgtPath.toString().contains("META-INF/services") && Files.exists(tgtPath)) {
+                                    // This is a service that already exists. Short-circuit for now as we do not support append
+                                    return FileVisitResult.CONTINUE;
+                                }
                                 Files.createDirectories(tgtPath.getParent());
                                 Files.copy(path, tgtPath, StandardCopyOption.REPLACE_EXISTING);
                                 return FileVisitResult.CONTINUE;
