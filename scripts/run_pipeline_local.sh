@@ -25,7 +25,7 @@ if [ -f "$FLINK_EXECUTABLE" ]; then
     echo "Embedded Flink Cluster Already Setup - Skipping New Install"
 else
     if $UPGRADE; then
-      echo "Flink Update Detected, Upgrading to v1.18.0 from " $UPGRADE_PATH
+      echo "Flink Update Detected, Upgrading to v1.18.0 from" $UPGRADE_PATH
     else
       echo "Downloading Apache Flink for Local Run"
     fi
@@ -39,6 +39,7 @@ else
       echo "parallelism.default (set equal to number of task slots), "
       echo "and taskmanager.memory.process.size (good start is 2GB * number of task slots)"
       read -p "When done, press [ENTER] to continue"
+	fi
 fi
 
 echo "Repackaging Backbone with Current Configs, Modules, and Resources"
@@ -47,7 +48,7 @@ java -cp bin/Plugin-Manager.jar org.ohnlp.backbone.pluginmanager.PluginManager F
 if [ $# -eq 0 ]; then
     cd configs
     echo "No configuration parameter supplied, scanning for Available Configurations..."
-    options=( $(find -mindepth 1 -maxdepth 1 -print0 -type f | xargs -0) )
+    options=( $(find ./ -mindepth 1 -maxdepth 1 -print0 -type f | xargs -0) )
     select opt in "${options[@]}" "Quit" ; do
         if (( REPLY == 1 + ${#options[@]} )) ; then
             exit
