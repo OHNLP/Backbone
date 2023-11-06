@@ -1,7 +1,5 @@
 package org.ohnlp.backbone.io.local;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.*;
@@ -69,8 +67,6 @@ public class CSVExtract extends ExtractToMany {
         PCollectionTuple readColls = fileURIs.apply("Read CSV Records and Map to Rows", ParDo.of(new DoFn<String, Row>() {
             private String[] header;
             private Map<Schema.TypeName, SerializableFunction<String, Object>> typeResolvers;
-            private final ThreadLocal<ObjectMapper> om = ThreadLocal.withInitial(ObjectMapper::new);
-            private final ThreadLocal<TypeFactory> tf = ThreadLocal.withInitial(() -> om.get().getTypeFactory());
 
             @Setup
             public void init() {

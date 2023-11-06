@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class RowValueToCSVEncoding extends RowToTextEncoding {
-    private ThreadLocal<ObjectMapper> om = ThreadLocal.withInitial(ObjectMapper::new);
     @Override
     public String toTextWithFields(Row input, List<String> fields) {
         return fields.stream().map(f -> parseFieldToString(input.getValue(f), input.getSchema().getField(f))).collect(Collectors.joining(","));
