@@ -1,38 +1,26 @@
 package org.ohnlp.backbone.io.local;
 
-import com.google.protobuf.FieldType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
-import org.apache.beam.sdk.io.FileIO;
-import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.*;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.checkerframework.checker.initialization.qual.Initialized;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.checker.nullness.qual.UnknownKeyFor;
-import org.joda.time.ReadableDateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.ISODateTimeFormat;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
 import org.ohnlp.backbone.api.components.ExtractToMany;
-import org.ohnlp.backbone.api.components.ExtractToOne;
 import org.ohnlp.backbone.api.exceptions.ComponentInitializationException;
 import org.ohnlp.backbone.io.Repartition;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.sql.ResultSet;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ComponentDescription(
@@ -81,6 +69,8 @@ public class CSVExtract extends ExtractToMany {
         PCollectionTuple readColls = fileURIs.apply("Read CSV Records and Map to Rows", ParDo.of(new DoFn<String, Row>() {
             private String[] header;
             private Map<Schema.TypeName, SerializableFunction<String, Object>> typeResolvers;
+            private final ThreadLocal<ObjectMapper> om = ThreadLocal.withInitial(ObjectMapper::new);
+            private final ThreadLocal<TypeFactory> tf = ThreadLocal.withInitial(() -> om.get().getTypeFactory());
 
             @Setup
             public void init() {
@@ -100,6 +90,32 @@ public class CSVExtract extends ExtractToMany {
                 this.typeResolvers.put(Schema.TypeName.STRING, s -> s);
             }
 
+            private SerializableFunction<String, Object> getFieldDeserializationFunction(Schema.FieldType type) {
+                if (type.getTypeName().isPrimitiveType()) {
+                    SerializableFunction<String, Object> func = this.typeResolvers.get(type.getTypeName());
+                    if (func == null) {
+                        throw new UnsupportedOperationException("Deserialization of Type " + type.getTypeName().name() + " from CSV is not Supported");
+                    }
+                    return func;
+                } else { // Treat as a serializable that was converted to a hexadecimal byte array
+                    return new SimpleFunction<>() {
+                        @Override
+                        public Object apply(String input) {
+                            // Convert back to a byte array
+                            try {
+                                byte[] inputBytes = Hex.decodeHex(input);
+                                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(inputBytes));
+                                Object ret = ois.readObject();
+                                ois.close();
+                                return ret;
+                            } catch (Throwable e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    };
+                }
+            }
+
             @ProcessElement
             public void processFile(ProcessContext pc) {
                 URI fileURI = URI.create(pc.element());
@@ -114,10 +130,7 @@ public class CSVExtract extends ExtractToMany {
                                 if (textValue == null) {
                                     rowBuilder.addValue(null);
                                 } else {
-                                    SerializableFunction<String, Object> func = this.typeResolvers.get(field.getType().getTypeName());
-                                    if (func == null) {
-                                        throw new UnsupportedOperationException("Deserialization of Type " + field.getType().getTypeName().name() + " from CSV is not Supported");
-                                    }
+                                    SerializableFunction<String, Object> func = this.getFieldDeserializationFunction(field.getType());
                                     rowBuilder.addValue(func.apply(textValue));
                                 }
                             }

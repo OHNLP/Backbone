@@ -240,12 +240,15 @@ public class JDBCExtract extends ExtractToOne {
     }
 
     private Schema getIdentifierColumnsSchema() throws ComponentInitializationException {
+        String metaQuery = "SELECT " + this.identifierCol + " FROM (" + this.query + ") " + this.viewName;
         try (Connection conn = this.initializationDS.getConnection()) {
-            String metaQuery = "SELECT " + this.identifierCol + " FROM (" + this.query + ") " + this.viewName;
             ResultSetMetaData queryMeta = conn.prepareStatement(metaQuery).getMetaData();
+            if (queryMeta == null) {
+                throw new IllegalArgumentException("ResultSetMetadata is Null");
+            }
             return SchemaUtilProxy.toBeamSchema(this.driver, queryMeta);
-        } catch (SQLException e) {
-            throw new ComponentInitializationException(e);
+        } catch (Throwable t) {
+            throw new ComponentInitializationException(new RuntimeException("Failed to pull identifier metadata for query " + metaQuery, t));
         }
     }
 
