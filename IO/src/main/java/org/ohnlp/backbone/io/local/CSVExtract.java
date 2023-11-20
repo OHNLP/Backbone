@@ -1,13 +1,17 @@
 package org.ohnlp.backbone.io.local;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.*;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.joda.time.ReadableDateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.ohnlp.backbone.api.annotations.ComponentDescription;
 import org.ohnlp.backbone.api.annotations.ConfigurationProperty;
@@ -65,6 +69,7 @@ public class CSVExtract extends ExtractToMany {
 
         PCollection<String> fileURIs = input.apply("Scan Input Directory for Partitioned Files", Create.of(Arrays.stream(Objects.requireNonNull(new File(dir).listFiles())).map(f -> f.toURI().toString()).collect(Collectors.toList()))).setCoder(StringUtf8Coder.of());
         PCollectionTuple readColls = fileURIs.apply("Read CSV Records and Map to Rows", ParDo.of(new DoFn<String, Row>() {
+            private ObjectMapper om;
             private String[] header;
             private Map<Schema.TypeName, SerializableFunction<String, Object>> typeResolvers;
 
@@ -84,6 +89,7 @@ public class CSVExtract extends ExtractToMany {
                 this.typeResolvers.put(Schema.TypeName.INT32, Integer::parseInt);
                 this.typeResolvers.put(Schema.TypeName.INT64, Long::parseLong);
                 this.typeResolvers.put(Schema.TypeName.STRING, s -> s);
+                this.om = new ObjectMapper();
             }
 
             private SerializableFunction<String, Object> getFieldDeserializationFunction(Schema.FieldType type) {
@@ -93,17 +99,13 @@ public class CSVExtract extends ExtractToMany {
                         throw new UnsupportedOperationException("Deserialization of Type " + type.getTypeName().name() + " from CSV is not Supported");
                     }
                     return func;
-                } else { // Treat as a serializable that was converted to a hexadecimal byte array
-                    return new SimpleFunction<>() {
+                } else { // Treat as a JSON Object and parse back using type info
+                    return new SerializableFunction<String, Object>() {
                         @Override
                         public Object apply(String input) {
-                            // Convert back to a byte array
                             try {
-                                byte[] inputBytes = Hex.decodeHex(input);
-                                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(inputBytes));
-                                Object ret = ois.readObject();
-                                ois.close();
-                                return ret;
+                                JsonNode json = om.readTree(input);
+                                return parseJSONFromField(json, type);
                             } catch (Throwable e) {
                                 throw new RuntimeException(e);
                             }
@@ -151,6 +153,67 @@ public class CSVExtract extends ExtractToMany {
         ret.get("CSV Records").setRowSchema(this.schema);
         ret.get("Errored Records").setRowSchema(this.errorSchema);
         return ret;
+    }
+
+    private Object parseJSONFromField(JsonNode json, Schema.FieldType type) {
+        switch (type.getTypeName()) {
+            case BYTE:
+                return ((Integer)json.asInt()).byteValue();
+            case INT16:
+                return ((Integer)json.asInt()).shortValue();
+            case INT32:
+                return json.asInt();
+            case INT64:
+                return json.asLong();
+            case DECIMAL:
+                return json.decimalValue();
+            case FLOAT:
+                return json.decimalValue().floatValue();
+            case DOUBLE:
+                return json.decimalValue().doubleValue();
+            case STRING:
+                return json.asText();
+            case DATETIME:
+                return ISODateTimeFormat.dateTimeParser().parseDateTime(json.asText());
+            case BOOLEAN:
+                return json.booleanValue();
+            case BYTES:
+                try {
+                    return json.binaryValue();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            case ARRAY:
+            case ITERABLE: {
+                List<Object> ret = new ArrayList<>();
+                for (JsonNode node : json) {
+                    ret.add(parseJSONFromField(node, type.getCollectionElementType()));
+                }
+                return ret;
+            }
+            case MAP: {
+                Map<String, Object> ret = new HashMap<>(); // Only string->object mappings supported
+                json.fields().forEachRemaining(f -> {
+                    ret.put(f.getKey(), parseJSONFromField(f.getValue(), type.getMapValueType()));
+                });
+                return ret;
+            }
+            case ROW: {
+                Schema val = type.getRowSchema();
+                List<Object> values = new ArrayList<>();
+                val.getFields().forEach(f -> {
+                    JsonNode childNode = json.get(f.getName());
+                    Object add = null;
+                    if (childNode != null) {
+                        add = parseJSONFromField(childNode, f.getType());
+                    }
+                    values.add(add);
+                });
+                return Row.withSchema(val).addValues(values).build();
+            }
+            default:
+                throw new UnsupportedOperationException("Deserialization of " + type.getTypeName().name() + " is not currently supported");
+        }
     }
 
 

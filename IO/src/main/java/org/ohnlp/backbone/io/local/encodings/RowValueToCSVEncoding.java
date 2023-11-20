@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class RowValueToCSVEncoding extends RowToTextEncoding {
+    public static final ThreadLocal<ObjectMapper> om = ThreadLocal.withInitial(ObjectMapper::new);
     @Override
     public String toTextWithFields(Row input, List<String> fields) {
         return fields.stream().map(f -> parseFieldToString(input.getValue(f), input.getSchema().getField(f))).collect(Collectors.joining(","));
@@ -35,15 +36,8 @@ public class RowValueToCSVEncoding extends RowToTextEncoding {
                 return StringEscapeUtils.escapeCsv(o.toString());
             } else {
                 try {
-                    if (o instanceof Serializable) {
-                        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                            oos.writeObject(o);
-                            oos.flush();
-                            return StringEscapeUtils.escapeCsv(Hex.encodeHexString(bos.toByteArray()));
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Trying to Serialize non-Serializable Type " + o.getClass().getName());
-                    }
+                    String s = om.get().writeValueAsString(o);
+                    return StringEscapeUtils.escapeCsv(s);
                 } catch (Throwable e) {
                     throw new RuntimeException("Failed to Serialize as JSON: " + o, e);
                 }
