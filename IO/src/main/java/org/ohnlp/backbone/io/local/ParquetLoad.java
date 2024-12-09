@@ -1,6 +1,7 @@
 package org.ohnlp.backbone.io.local;
 
 import org.apache.avro.generic.GenericRecord;
+import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
 import org.apache.beam.sdk.schemas.Schema;
@@ -65,6 +66,7 @@ public class ParquetLoad extends LoadFromOne {
                         output.output(AvroUtils.toGenericRecord(input, AvroUtils.toAvroSchema(beamSchema)));
                     }
                 }))
+                .setCoder(AvroCoder.of(GenericRecord.class, AvroUtils.toAvroSchema(beamSchema)))
                 .apply("Write to Filesystem", FileIO
                         .<GenericRecord>write()
                         .via(ParquetIO.sink(AvroUtils.toAvroSchema(beamSchema)))
