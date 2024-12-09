@@ -202,6 +202,7 @@ public class PythonBridge<T> implements Serializable {
                 // -- truncate the python_resources part out of the output path
                 pathRelative = pathRelative.replaceAll("^" + File.separator + "?python_resources" + File.separator, "");
                 File pathInTmp = new File(workDir, pathRelative);
+                pathInTmp.getParentFile().mkdirs();
                 byte[] contents = jar.getInputStream(entry).readAllBytes();
                 try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
                     fos.write(contents);
