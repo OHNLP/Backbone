@@ -6,7 +6,7 @@
 
     <groupId>org.ohnlp.backbone</groupId>
     <artifactId>backbone-parent</artifactId>
-    <version>3.0.32</version>
+    <version>3.0.33</version>
 
 
     <properties>

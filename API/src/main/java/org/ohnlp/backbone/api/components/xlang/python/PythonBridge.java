@@ -92,7 +92,8 @@ public class PythonBridge<T> implements Serializable {
             if (JVM_ENVIRONMENTS_BY_BUNDLE_ID.containsKey(this.bundleIdentifier)) {
                 try {
                     // Environment already exists and/or is initializing, just wait for completion and return
-                    JVM_ENVIRONMENTS_BY_BUNDLE_ID.get(this.bundleIdentifier).get();
+                    PythonEnvironment e = JVM_ENVIRONMENTS_BY_BUNDLE_ID.get(this.bundleIdentifier).get();
+                    this.launchFile = new File(e.getWorkDir(), "backbone_launcher.py");
                     return;
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
