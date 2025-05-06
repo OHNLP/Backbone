@@ -129,8 +129,7 @@ public class PythonBridge<T> implements Serializable {
         }
         if (!CLEANUP_ENVS_ON_SHUTDOWN) {
             boolean reinit = false;
-            try {
-                InputStream bundleIS = findBundle();
+            try (InputStream bundleIS = findBundle()) {
                 byte[] data = bundleIS.readAllBytes();
                 String currModuleChecksum = new BigInteger(1, MessageDigest.getInstance("MD5").digest(data)).toString(16);
                 if (currModuleChecksum.equals(cachedModuleChecksum)) {
@@ -203,9 +202,17 @@ public class PythonBridge<T> implements Serializable {
                 pathRelative = pathRelative.replaceAll("^" + File.separator + "?python_resources" + File.separator, "");
                 File pathInTmp = new File(workDir, pathRelative);
                 pathInTmp.getParentFile().mkdirs();
-                byte[] contents = jar.getInputStream(entry).readAllBytes();
-                try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
-                    fos.write(contents);
+                try (InputStream inputStream = jar.getInputStream(entry);
+                     FileOutputStream fos = new FileOutputStream(pathInTmp)) {
+
+                    // Define a buffer to transfer data in chunks
+                    byte[] buffer = new byte[8192];  // 8KB buffer
+                    int bytesRead;
+
+                    // Copy data in chunks from the JAR entry input stream to the output file
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                    }
                     fos.flush();
                 }
             }
