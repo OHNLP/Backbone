@@ -21,11 +21,12 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
     private final boolean multiInput;
     private final boolean multiOutput;
     private final File tmpDir;
+    private final boolean loadEnv;
 
     private transient PythonBridge<? extends PythonProcessingPartitionBasedDoFn<?, ?>> python;
     private transient PythonProcessingPartitionBasedDoFn<?, ?> proxiedDoFn;
 
-    public PythonProxyDoFn(File tmpDir, String bundleName,  String doFnEntryPoint, String doFnEntryClass, String infoFromDriver, boolean multiInput, boolean multiOutput) {
+    public PythonProxyDoFn(boolean loadEnv, File tmpDir, String bundleName,  String doFnEntryPoint, String doFnEntryClass, String infoFromDriver, boolean multiInput, boolean multiOutput) {
         this.tmpDir = tmpDir;
         this.bundleName = bundleName;
         this.doFnEntryPoint = doFnEntryPoint;
@@ -33,6 +34,7 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
         this.driverInfo = infoFromDriver;
         this.multiInput = multiInput;
         this.multiOutput = multiOutput;
+        this.loadEnv = loadEnv;
     }
 
 
@@ -49,7 +51,7 @@ public class PythonProxyDoFn extends DoFn<String, String> implements Serializabl
             }
         }
         // Init python bridge
-        this.python = new PythonBridge<>(this.tmpDir, this.bundleName, this.doFnEntryPoint, this.doFnEntryClass, implCls);
+        this.python = new PythonBridge<>(this.loadEnv, this.tmpDir, this.bundleName, this.doFnEntryPoint, this.doFnEntryClass, implCls);
         this.python.startBridge();
 
         // Get proxied DoFn

@@ -1,6 +1,5 @@
 package org.ohnlp.backbone.api.pipeline;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.schemas.Schema;
@@ -90,7 +89,7 @@ public class PipelineBuilder {
                     }
                 } else if (configs[i] instanceof PythonBackbonePipelineComponentConfiguration) {
                     PythonBackbonePipelineComponentConfiguration pythonconfig = (PythonBackbonePipelineComponentConfiguration) configs[i];
-                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(new File(System.getProperty("java.io.tmpdir")), pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
+                    PythonProxyTransformComponent instance = new PythonProxyTransformComponent(!config.getOfflinePythonEnvs(), new File(System.getProperty("java.io.tmpdir")), pythonconfig.getBundleName(), pythonconfig.getEntryPoint(), pythonconfig.getEntryClass());
                     JsonNode configForInstance = pythonconfig.getConfig();
                     instance.injectConfig(configForInstance);
                     instance.init();

@@ -12,6 +12,7 @@ import java.util.List;
 public class BackboneConfiguration {
     private String id;
     private String description;
+    private boolean offlinePythonEnvs = false;
     private List<BackbonePipelineComponentConfiguration> pipeline;
 
     public String getId() {
@@ -36,5 +37,13 @@ public class BackboneConfiguration {
 
     public void setPipeline(List<BackbonePipelineComponentConfiguration> pipeline) {
         this.pipeline = pipeline;
+    }
+
+    public boolean getOfflinePythonEnvs() {
+        return offlinePythonEnvs;
+    }
+
+    public void setOfflinePythonEnvs(boolean offlinePythonEnvs) {
+        this.offlinePythonEnvs = offlinePythonEnvs;
     }
 }

@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 public class PythonProxyTransformComponent extends TransformComponent implements XLangComponent, SingleInputComponent, SchemaInitializable {
 
+    private final boolean loadEnv;
     private File envTmp;
     private String config;
 
@@ -43,11 +44,12 @@ public class PythonProxyTransformComponent extends TransformComponent implements
     private final AtomicBoolean INIT_COMPLETE = new AtomicBoolean(false);
     private final AtomicReference<ComponentInitializationException> INIT_ERROR = new AtomicReference(null);
 
-    public PythonProxyTransformComponent(File envTmp, String bundleIdentifier, String entryPoint, String entryClass) {
+    public PythonProxyTransformComponent(boolean loadEnv, File envTmp, String bundleIdentifier, String entryPoint, String entryClass) {
         this.envTmp = envTmp;
         this.entryPoint = entryPoint;
         this.entryClass = entryClass;
         this.bundleIdentifier = bundleIdentifier;
+        this.loadEnv = loadEnv;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         if (INIT_LOCK.getAndSet(false)) { // Acquired Lock
             if (!INIT_IN_PROGRESS.getAndSet(true)) {
                 try {
-                    this.python = new PythonBridge<>(this.envTmp, this.bundleIdentifier, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
+                    this.python = new PythonBridge<>(this.loadEnv, this.envTmp, this.bundleIdentifier, this.entryPoint, this.entryClass, PythonBackbonePipelineComponent.class);
                     this.python.startBridge();
                     this.proxiedComponent = python.getPythonEntryPoint();
                     this.proxiedComponent.init(this.config);
@@ -110,6 +112,7 @@ public class PythonProxyTransformComponent extends TransformComponent implements
         // Get a proxied python DoFn that handles bridge setup on executor nodes, and pass it initialized driver configs
         // as well
         PythonProxyDoFn proxiedDoFn = new PythonProxyDoFn(
+                this.loadEnv,
                 this.envTmp,
                 this.bundleIdentifier,
                 this.entryPoint,

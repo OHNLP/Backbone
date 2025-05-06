@@ -43,12 +43,14 @@ public class PythonBridge<T> implements Serializable {
     private final String entryClass;
     private final Class<T> pythonEntryPointClass;
     private final File tmpDir;
+    private final boolean loadEnv;
     private transient DefaultExecutor executor;
     private transient ClientServer bridgeServer;
     private transient File launchFile;
     private transient OSType os;
 
-    public PythonBridge(File tmpDir, String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
+    public PythonBridge(boolean loadEnv, File tmpDir, String bundleName, String entryPoint, String entryClass, Class<T> clazz) throws IOException {
+        this.loadEnv = loadEnv;
         this.tmpDir = tmpDir;
         this.bundleIdentifier = bundleName;
         this.entryPoint = entryPoint;
@@ -245,59 +247,60 @@ public class PythonBridge<T> implements Serializable {
         String localEnvName = "env";
         File envDir = new File(workDir, localEnvName);
         envDir.mkdirs();
-        if (initEnv) {
-            // Extract the packaged conda env
-            String osPath = "linux";
-            if (this.os.equals(OSType.WINDOWS)) {
-                osPath = "win32";
-            } else {
-                if (this.os.equals(OSType.MAC_DARWIN)) {
-                    osPath = "darwin";
-                } else if (!this.os.equals(OSType.LINUX)) {
-                    osPath = "unix";
-                }
-            }
-            File envTar;
-            try {
-                InputStream envTarStream = findEnv(osPath);
-                if (envTarStream == null) {
-                    if (osPath.equals("unix")) {
-                        Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting online/dynamic environment resolution");
-                        dynamicallyResolveEnvironment(localEnvName, workDir);
-                    } else {
-                        if (!osPath.equals("win32")) {
-                            Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting to fall back to unix environment, unexpected behaviour may occur");
-                            envTarStream = findEnv("unix");
-                            if (envTarStream == null) {
-                                Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS Unix, attempting online/dynamic environment resolution");
-                                dynamicallyResolveEnvironment(localEnvName, workDir);
-                            }
-                        } else {
-                            Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", win32 cannot fall back to unix, so attempting online/dynamic environment resolution");
-                            dynamicallyResolveEnvironment(localEnvName, workDir);
-                        }
+        if (loadEnv) {
+            if (initEnv) {
+                // Extract the packaged conda env
+                String osPath = "linux";
+                if (this.os.equals(OSType.WINDOWS)) {
+                    osPath = "win32";
+                } else {
+                    if (this.os.equals(OSType.MAC_DARWIN)) {
+                        osPath = "darwin";
+                    } else if (!this.os.equals(OSType.LINUX)) {
+                        osPath = "unix";
                     }
                 }
-                if (envTarStream != null) {
-                    envTar = new File(workDir, "environment.tar.gz");
-                    Files.copy(envTarStream, envTar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
-                    unarchiver.setSourceFile(envTar);
-                    unarchiver.setDestDirectory(envDir);
-                    unarchiver.extract();
+                File envTar;
+                try {
+                    InputStream envTarStream = findEnv(osPath);
+                    if (envTarStream == null) {
+                        if (osPath.equals("unix")) {
+                            Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting online/dynamic environment resolution");
+                            dynamicallyResolveEnvironment(localEnvName, workDir);
+                        } else {
+                            if (!osPath.equals("win32")) {
+                                Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", attempting to fall back to unix environment, unexpected behaviour may occur");
+                                envTarStream = findEnv("unix");
+                                if (envTarStream == null) {
+                                    Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS Unix, attempting online/dynamic environment resolution");
+                                    dynamicallyResolveEnvironment(localEnvName, workDir);
+                                }
+                            } else {
+                                Logger.getGlobal().log(Level.INFO, "Could not find bundled/offline environment " + this.bundleIdentifier + " for OS " + osPath + ", win32 cannot fall back to unix, so attempting online/dynamic environment resolution");
+                                dynamicallyResolveEnvironment(localEnvName, workDir);
+                            }
+                        }
+                    }
+                    if (envTarStream != null) {
+                        envTar = new File(workDir, "environment.tar.gz");
+                        Files.copy(envTarStream, envTar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        TarGZipUnArchiver unarchiver = new TarGZipUnArchiver();
+                        unarchiver.setSourceFile(envTar);
+                        unarchiver.setDestDirectory(envDir);
+                        unarchiver.extract();
+                    }
+                } catch (IOException e) {
+                    env.completeExceptionally(e);
+                    return;
                 }
-            } catch (IOException e) {
-                env.completeExceptionally(e);
-                return;
             }
+            try (FileWriter fw = new FileWriter(new File(workDir, "modulehash.txt"))) {
+                fw.write(cachedModuleChecksum);
+                fw.flush();
+            } catch (IOException ignored) {
+            }
+            // Write new checksums
         }
-        ObjectWriter ow = new ObjectMapper().writer();
-        try (FileWriter fw = new FileWriter(new File(workDir, "modulehash.txt"))){
-            fw.write(cachedModuleChecksum);
-            fw.flush();
-        } catch (IOException ignored) {
-        }
-        // Write new checksums
         env.complete(new PythonEnvironment(workDir, envDir));
     }
 
@@ -379,6 +382,10 @@ public class PythonBridge<T> implements Serializable {
         // TODO Consider doing the full conda-unpack routine in a future release
         // See: https://conda.github.io/conda-pack/ under "Commandline Usage"
         String pythonPath = os.equals(OSType.WINDOWS) ? new File(env.envDir, "python.exe").getAbsolutePath() : new File(new File(env.envDir, "bin"), "python").getAbsolutePath();
+        if (!this.loadEnv) {
+            // Just use default env without env.envDir , i.e. a blank "python(.exe)"
+            pythonPath = os.equals(OSType.WINDOWS) ? "python.exe" : "python";
+        }
         String cmd = String.join(" ",
                 pythonPath,
                 this.launchFile.getName(),
