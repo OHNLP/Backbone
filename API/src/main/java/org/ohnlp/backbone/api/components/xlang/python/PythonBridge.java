@@ -87,7 +87,7 @@ public class PythonBridge<T> implements Serializable {
     private void extractPythonResourcesIfNotExists() {
         CompletableFuture<PythonEnvironment> env = new CompletableFuture<>();
         synchronized (JVM_ENVIRONMENTS_BY_BUNDLE_ID) {
-            if (JVM_ENVIRONMENTS_BY_BUNDLE_ID.contains(this.bundleIdentifier)) {
+            if (JVM_ENVIRONMENTS_BY_BUNDLE_ID.containsKey(this.bundleIdentifier)) {
                 try {
                     // Environment already exists and/or is initializing, just wait for completion and return
                     JVM_ENVIRONMENTS_BY_BUNDLE_ID.get(this.bundleIdentifier).get();
