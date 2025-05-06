@@ -164,22 +164,24 @@ public class PythonBridge<T> implements Serializable {
                     env.completeExceptionally(new IllegalArgumentException("Could not find module " + this.bundleIdentifier));
                     return;
                 }
-                ZipInputStream zis = new ZipInputStream(is);
-                // - Now actually copy the resources over
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    if (entry.isDirectory()) {
-                        continue;
-                    }
-                    String pathRelative = entry.getName();
-                    File pathInTmp = new File(workDir, pathRelative);
-                    byte[] contents = zis.readAllBytes();
-                    try (FileOutputStream fos = new FileOutputStream(pathInTmp)) {
-                        fos.write(contents);
-                        fos.flush();
+                try (ZipInputStream zis = new ZipInputStream(is)) {
+                    // - Now actually copy the resources over
+                    ZipEntry entry;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        if (entry.isDirectory()) {
+                            continue;
+                        }
+                        File pathInTmp = new File(workDir, entry.getName());
+                        pathInTmp.getParentFile().mkdirs();
+                        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(pathInTmp))) {
+                            byte[] buffer = new byte[8192];
+                            int len;
+                            while ((len = zis.read(buffer)) > 0) {
+                                bos.write(buffer, 0, len);
+                            }
+                        }
                     }
                 }
-                zis.close();
             } catch (IOException e) {
                 env.completeExceptionally(e);
                 return;
