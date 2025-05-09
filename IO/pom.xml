@@ -77,7 +77,7 @@
 
     <properties>
         <oracle.version>19.7.0.0</oracle.version>
-        <mysql.version>8.0.21</mysql.version>
+        <mysql.version>8.0.28</mysql.version>
         <postgresql.version>42.2.14.jre7</postgresql.version>
         <mssql.version>8.2.2.jre8</mssql.version>
         <db2.version>11.5.4.0</db2.version>
